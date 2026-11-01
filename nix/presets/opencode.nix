@@ -51,6 +51,9 @@
     { action = "deny"; operation = "file_all"; filter = { subpath = { literal = "/private/var/db"; }; }; }
     { action = "deny"; operation = "file_all"; filter = { subpath = { literal = "/private/var/root"; }; }; }
     { action = "allow"; operation = "file_all"; filter = { subpath = { param = "CWD"; }; }; }
+    { action = "deny"; operation = "file_write_all"; filter = { subpath = { param_append = { param = "CWD"; suffix = "/.opencode"; }; }; }; }
+    { action = "deny"; operation = "file_write_all"; filter = { literal = { param_append = { param = "CWD"; suffix = "/opencode.json"; }; }; }; }
+    { action = "deny"; operation = "file_write_all"; filter = { literal = { param_append = { param = "CWD"; suffix = "/opencode.jsonc"; }; }; }; }
     { action = "allow"; operation = "file_all"; filter = { literal = { literal = "/dev/null"; }; }; }
     { action = "allow"; operation = "file_read_data"; filter = { literal = { literal = "/dev"; }; }; }
     { action = "allow"; operation = "file_read_data"; filter = { literal = { literal = "/dev/dtracehelper"; }; }; }

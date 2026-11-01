@@ -1,17 +1,19 @@
 # zandy.nix for macOS
 
-**A sandbox for coding agents on macOS: declared in Nix, run by Zig, enforced by the macOS kernel.**
+**A sandbox for any program on macOS: declared in Nix, run by Zig, enforced by the macOS kernel.**
 
-You declare in a flake what Claude Code or opencode may touch. zandy starts the agent so it can't touch anything else:
+You declare in a flake what a program may touch. zandy starts it so it can't touch anything else:
 
 - your project, not the rest of `$HOME`
 - your flake's tools, not your machine's
-- port 443 and the model gateway, nothing else
+- port 443 and the gateway, nothing else
 - no credentials inside the sandbox
+
+zandy comes with presets for Claude Code and opencode. Any other program, from a shell to a test runner, runs the same way with a [preset of your own](docs/README.md#your-own-preset).
 
 ## How it works
 
-**Nix** declares the sandbox: tools, files, network, adapters and the model backend. **zandy**, written in Zig, turns that into a Seatbelt profile, then starts the agent with a broker and a gateway that use your credentials outside the sandbox. **Seatbelt**, the macOS kernel sandbox, enforces the profile, and the agent can't loosen it.
+**Nix** declares the sandbox: the program, tools, files, network, adapters and the model backend. **zandy**, written in Zig, turns that into a Seatbelt profile and starts the program. Next to it run a broker, which calls your tools with your credentials, and a gateway, which adds the model's API key, both outside the sandbox. **Seatbelt**, the macOS kernel sandbox, enforces the profile, and the program can't loosen it.
 
 The same flake always gives the same sandbox, the built sandbox is read-only, and it holds no secrets.
 
@@ -29,7 +31,7 @@ git init && git add -A
 nix profile add ~/.config/zandy
 ```
 
-Then start the agent in any project:
+Then start Claude Code in any project:
 
 ```sh
 cd ~/code/widgets
@@ -56,4 +58,4 @@ If your flake is in a git repo, `git add` new files first. Flakes only see track
 
 ## Documentation
 
-Everything else is in [docs](docs/README.md): configuration, model backends, secrets, writing adapters, security limits and troubleshooting.
+Everything else is in [docs](docs/README.md): configuration, your own presets, model backends, secrets, writing adapters, security limits and troubleshooting.

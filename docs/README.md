@@ -3,6 +3,7 @@
 - [Install](#install)
 - [Per project](#per-project)
 - [Configuration](#configuration)
+- [Your own preset](#your-own-preset)
 - [Model backends](#model-backends)
 - [Secrets](#secrets)
 - [Inside the sandbox](#inside-the-sandbox)
@@ -88,13 +89,82 @@ zandy.lib.mkSandboxEnv {
 | Option | What it sets |
 |---|---|
 | `name` | The env's name. The launcher is called `zandy-<name>` |
-| `preset` | The app to run and the sandbox rules it needs: `zandy.presets.claude` or `zandy.presets.opencode` |
+| `preset` | The program to run and the sandbox rules it needs: `zandy.presets.claude`, `zandy.presets.opencode` or [your own](#your-own-preset) |
 | `packages` | Extra programs the agent may run |
 | `gateway` | The [model backend](#model-backends) |
 | `adapters` | Tools the broker runs outside the sandbox for the agent |
 | `filesystem` | Extra paths the agent may read or write, or may not |
 
 A mistyped or unknown option fails at build time. For all options with their types and defaults, see [options.md](options.md). It is generated with `nix build .#options-doc`.
+
+## Your own preset
+
+A preset is a plain attrset: the program to start, the packages it needs, the env vars it gets and its Seatbelt rules. Any program can be one.
+
+A shell with Claude Code's rules, to try things inside the sandbox by hand:
+
+```nix
+packages.aarch64-darwin.shell = zandy.lib.mkSandboxEnv {
+  inherit pkgs;
+  name = "shell";
+  preset = zandy.presets.claude // { name = "shell"; binary = "bash"; args = [ ]; };
+};
+```
+
+```sh
+nix run ~/.config/zandy#shell
+```
+
+To change the rules, extend a preset's list:
+
+```nix
+rules = zandy.presets.claude.rules ++ [
+  { action = "deny"; operation = "file_read_data"; filter = { subpath = { literal = "/private/var/folders"; }; }; }
+];
+```
+
+Or filter it:
+
+```nix
+rules = builtins.filter (rule: rule.operation != "sysctl_all") zandy.presets.claude.rules;
+```
+
+Or write one from scratch. This one runs curl, which may reach HTTPS hosts and nothing else, not even your project:
+
+```nix
+packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
+  inherit pkgs;
+  name = "curl";
+  preset = {
+    name = "curl";
+    binary = "curl";
+    args = [ "--cacert" "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" ];
+    packages = pkgs: [ pkgs.curl pkgs.cacert ];
+    rules = [
+      { action = "allow"; operation = "file_read_metadata"; }
+      { action = "allow"; operation = "file_map_executable"; }
+      { action = "allow"; operation = "sysctl_all"; }
+      { action = "allow"; operation = "network_outbound"; filter = { remote_tcp = "*:443"; }; }
+      { action = "allow"; operation = "network_outbound"; filter = { remote_unix_socket = { literal = "/private/var/run/mDNSResponder"; }; }; }
+    ];
+  };
+};
+```
+
+```sh
+nix run ~/.config/zandy#curl -- https://example.com
+```
+
+Start with few rules and add what the [debug log](logging.md) shows as denied.
+
+The sandbox denies everything that no rule allows. zandy adds rules in this order, and a later rule wins:
+
+1. the preset's `rules`
+2. read and execute for the env's store paths
+3. `filesystem` from your flake
+4. zandy's own denies: `flake.nix`, `flake.lock`, `.envrc`, `.git/config`, `.git/hooks`, `~/.zandy` and the keychain
+
+So no preset can open what zandy protects. The operations and filters a rule may use are in [src/sandbox/sbpl.zig](../src/sandbox/sbpl.zig).
 
 ## Model backends
 
@@ -163,7 +233,7 @@ Don't export secrets in the shell that starts zandy. See [Security limits](#secu
 
 The agent:
 
-- can write to the project directory, except `flake.nix`, `flake.lock`, `.envrc`, `.git/config` and `.git/hooks`
+- can write to the project directory, except `flake.nix`, `flake.lock`, `.envrc`, `.git/config` and `.git/hooks`, and the agent's own project config, which would run outside the sandbox the next time you start the agent without zandy: `.claude/` and `.mcp.json` for Claude Code, `.opencode/` and `opencode.json` for opencode
 - can run only programs from the env, so no Homebrew, `/usr/bin` or downloaded binaries
 - can connect only to port 443, DNS and the gateway
 - can't read the keychain or `~/.zandy`

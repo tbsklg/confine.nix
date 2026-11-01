@@ -1,0 +1,33 @@
+name: sandbox
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Build the test env
+        run: nix build .#sandbox-test --print-build-logs
+
+      - name: Plant canaries
+        run: |
+          mkdir -p ~/.aws ~/.ssh ~/.config/glab-cli ~/.claude/projects/canary
+          printf '[default]\naws_access_key_id = AKIACANARY\n' > ~/.aws/credentials
+          echo canary > ~/.ssh/id_canary
+          printf 'hosts:\n  gitlab.com:\n    token: canary\n' > ~/.config/glab-cli/config.yml
+          echo canary > ~/canary.txt
+
+      - name: Probe the sandbox
+        run: |
+          project=$(mktemp -d)
+          cd "$project"
+          git init -q
+          touch flake.nix .envrc
+          CANARY_ENV=zandy-canary "$GITHUB_WORKSPACE/result/bin/zandy-sandbox-test"
