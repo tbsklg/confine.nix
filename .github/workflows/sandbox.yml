@@ -14,7 +14,13 @@ jobs:
       - uses: cachix/install-nix-action@v31
 
       - name: Build the test env
-        run: nix build .#sandbox-test --print-build-logs
+        run: |
+          nix build --impure --print-build-logs --expr '
+            let
+              flake = builtins.getFlake (toString ./.);
+              pkgs = import flake.inputs.nixpkgs { system = "aarch64-darwin"; };
+            in
+            import ./nix/sandbox-test.nix { inherit pkgs; inherit (flake.lib) mkSandboxEnv; }'
 
       - name: Plant canaries
         run: |
