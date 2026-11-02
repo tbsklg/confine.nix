@@ -1,5 +1,6 @@
 # zandy.nix docs
 
+- [Architecture](#architecture)
 - [Install](#install)
 - [Per project](#per-project)
 - [Configuration](#configuration)
@@ -12,6 +13,51 @@
 - [Security limits](#security-limits)
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph build["Build: Nix"]
+    flake["flake.nix<br/>preset, packages, adapters,<br/>gateway, filesystem"]
+    env["env<br/>sandbox/bin, store-paths, zandy.json"]
+    launcher["bin/zandy-&lt;name&gt;"]
+    flake --> env
+    flake --> launcher
+  end
+
+  subgraph host["Outside the sandbox"]
+    zandy["zandy<br/>builds the Seatbelt profile"]
+    broker["broker<br/>~/.zandy/run/&lt;pid&gt;/broker.sock"]
+    gateway["gateway<br/>caddy, aws-sigv4-proxy"]
+    tools["adapter tools<br/>glab, aws"]
+    creds[("credentials<br/>zandy keychain, tool logins")]
+  end
+
+  subgraph sandbox["Inside the sandbox: Seatbelt"]
+    agent["program<br/>claude, opencode, …"]
+    client["zandy-client"]
+    project[("project directory")]
+  end
+
+  launcher --> zandy
+  env --> zandy
+  zandy -- starts --> gateway
+  zandy -- starts --> broker
+  zandy -- "sandbox_init, exec" --> agent
+  creds -. "named pipes" .-> gateway
+  creds -.-> tools
+  agent --> project
+  agent --> client
+  client -- "JSON-RPC + ticket" --> broker
+  broker -- runs --> tools
+  agent -- "HTTP, no key" --> gateway
+  gateway -- "adds key" --> model["model API"]
+  tools --> services["GitLab, AWS"]
+  agent -- "HTTPS" --> internet["internet"]
+```
+
+Nix builds the env and the launcher. zandy reads the env, starts the gateway and the broker, and runs the program under a Seatbelt profile. Credentials stay outside: the gateway adds the model key, and the broker runs your tools with their own logins. The sequence of a launch is in [runtime-flow.puml](runtime-flow.puml).
 
 ## Install
 
