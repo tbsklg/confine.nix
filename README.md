@@ -1,7 +1,7 @@
 <pre>
 ╔═╗╔═╗╔╗╔╔╦╗╦ ╦
 ╔═╝╠═╣║║║ ║║╚╦╝
-╚═╝╩ ╩╝╚╝═╩╝ ╩
+╚═╝╩ ╩╝╚╝═╩╝ ╩ .nix
 </pre>
 
 A sandbox for agents and other CLI tools on macOS. The configuration is declared in Nix, the launcher is written in Zig, and the sandbox is enforced by Seatbelt, the macOS kernel sandbox.
