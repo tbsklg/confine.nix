@@ -56,9 +56,22 @@ let
         { name = "zandy.json"; path = (pkgs.formats.json { }).generate "zandy.json" manifest; }
       ];
 
+      label = lib.optionalString (preset.icon != "") "${preset.icon} " + cfg.name;
+      backend = if gateway == null then "no gateway" else "gateway ${gateway.name}";
+
       launcher = pkgs.writeShellApplication {
         name = "zandy-${cfg.name}";
-        text = ''exec ${zandy}/bin/zandy --env ${env} "$@"'';
+        text = ''
+          if [ -t 2 ]; then
+            printf '%s\n' \
+              "" \
+              " ╔═╗╔═╗╔╗╔╔╦╗╦ ╦   ${label}" \
+              " ╔═╝╠═╣║║║ ║║╚╦╝   ''${PWD/#"$HOME"/\~}" \
+              " ╚═╝╩ ╩╝╚╝═╩╝ ╩    sandboxed · ${backend}" \
+              "" >&2
+          fi
+          exec ${zandy}/bin/zandy --env ${env} "$@"
+        '';
       };
     in
     assert lib.assertMsg pkgs.stdenv.hostPlatform.isDarwin

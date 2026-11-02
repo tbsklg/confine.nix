@@ -1,4 +1,8 @@
-# zandy.nix for macOS
+```text
+╔═╗╔═╗╔╗╔╔╦╗╦ ╦
+╔═╝╠═╣║║║ ║║╚╦╝
+╚═╝╩ ╩╝╚╝═╩╝ ╩
+```
 
 **A sandbox for any program on macOS: declared in Nix, run by Zig, enforced by the macOS kernel.**
 

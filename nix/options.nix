@@ -21,6 +21,7 @@ in
         options = {
           name = mkOption { type = types.str; description = "Name of the preset."; };
           binary = mkOption { type = types.str; description = "Binary in `sandbox/bin` to execute."; };
+          icon = mkOption { type = types.str; default = ""; description = "Symbol shown in the start banner."; };
           packages = mkOption { type = types.functionTo (types.listOf types.package); description = "Packages the app needs, given `pkgs`."; };
           env = mkOption { type = types.listOf types.str; default = [ ]; description = "Names of the environment variables passed into the sandbox."; };
           args = mkOption { type = types.listOf types.str; default = [ ]; description = "Startup args."; };

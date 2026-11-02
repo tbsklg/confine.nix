@@ -290,6 +290,27 @@ attribute set of ((attribute set of string) or function that evaluates to a(n) a
 
 
 
+## preset\.icon
+
+
+
+Symbol shown in the start banner\.
+
+
+
+*Type:*
+string
+
+
+
+*Default:*
+
+```nix
+""
+```
+
+
+
 ## preset\.name
 
 

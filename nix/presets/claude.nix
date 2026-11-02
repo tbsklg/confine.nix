@@ -9,6 +9,7 @@ in
 {
   name = "claude";
   binary = "claude";
+  icon = "✻";
   packages = pkgs: [ pkgs.claude-code pkgs.bash pkgs.coreutils pkgs.git ];
   env = [ "HOME" "TMPDIR" "USER" "TERM" "COLORTERM" "LANG" "LC_ALL" ];
 
@@ -25,7 +26,12 @@ in
     };
   };
 
-  args = [ "--append-system-prompt" prompt ];
+  args = [
+    "--append-system-prompt"
+    prompt
+    "--settings"
+    (builtins.toJSON { statusLine = { type = "command"; command = "echo '🔒 zandy'"; }; })
+  ];
 
   rules = [
     { action = "allow"; operation = "process_exec"; filter = { literal = { literal = "/bin/sh"; }; }; }
