@@ -1,10 +1,10 @@
-```text
+<pre>
 ╔═╗╔═╗╔╗╔╔╦╗╦ ╦
 ╔═╝╠═╣║║║ ║║╚╦╝
 ╚═╝╩ ╩╝╚╝═╩╝ ╩
-```
+</pre>
 
-**A sandbox for any program on macOS: declared in Nix, run by Zig, enforced by the macOS kernel.**
+**A sandbox for agents and other CLI tools on macOS: declared in Nix, run by Zig, enforced by the macOS kernel.**
 
 You declare in a flake what a program may touch. zandy starts it so it can't touch anything else:
 
