@@ -4,14 +4,9 @@
 ╚═╝╩ ╩╝╚╝═╩╝ ╩
 </pre>
 
-**A sandbox for agents and other CLI tools on macOS: declared in Nix, run by Zig, enforced by the macOS kernel.**
+A sandbox for agents and other CLI tools on macOS. The configuration is declared in Nix, the launcher is written in Zig, and the sandbox is enforced by Seatbelt, the macOS kernel sandbox.
 
-You declare in a flake what a program may touch. zandy starts it so it can't touch anything else:
-
-- your project, not the rest of `$HOME`
-- your flake's tools, not your machine's
-- port 443 and the gateway, nothing else
-- no credentials inside the sandbox
+A flake declares which files, programs and network destinations a program may use. zandy starts it under a profile that denies everything else, and keeps credentials outside the sandbox. This reduces what the program can reach, but it is not a complete isolation boundary; see [Security limits](docs/README.md#security-limits).
 
 zandy comes with presets for Claude Code and opencode. Any other program, from a shell to a test runner, runs the same way with a [preset of your own](docs/README.md#your-own-preset).
 
