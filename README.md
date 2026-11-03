@@ -20,24 +20,36 @@ Apple Silicon only.
 
 ## Quickstart
 
-With [Nix](https://nixos.org/download) and flakes enabled:
+You need [Nix](https://nixos.org/download) with flakes and an AWS profile with Bedrock access.
 
-```sh
-mkdir -p ~/.config/zandy && cd ~/.config/zandy
-nix flake init -t github:tbsklg/zandy.nix
-$EDITOR flake.nix
-git init && git add -A
-nix profile add ~/.config/zandy
-```
+1. Create a flake in any directory:
 
-Then start Claude Code in any project:
+   ```sh
+   mkdir ~/sandboxes && cd ~/sandboxes
+   nix flake init -t github:tbsklg/zandy.nix
+   git init && git add -A
+   ```
 
-```sh
-cd ~/code/widgets
-zandy-claude
-```
+2. In `flake.nix`, set your Bedrock profile and region:
 
-The template uses Bedrock and the GitLab and AWS adapters. To switch the model backend or set up secrets, see the [docs](docs/README.md).
+   ```nix
+   gateway = zandy.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
+   ```
+
+3. Run Claude Code in a project:
+
+   ```sh
+   cd your-project
+   nix run ~/sandboxes
+   ```
+
+4. Install it as `zandy-claude`:
+
+   ```sh
+   nix profile add ~/sandboxes
+   ```
+
+The template also adds the GitLab and AWS adapters; remove them if you don't need them. For other model backends and secrets, see the [docs](docs/README.md).
 
 ## Update
 

@@ -16,45 +16,23 @@
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  subgraph build["Build: Nix"]
-    flake["flake.nix<br/>preset, packages, adapters,<br/>gateway, filesystem"]
-    env["env<br/>sandbox/bin, store-paths, zandy.json"]
-    launcher["bin/zandy-&lt;name&gt;"]
-    flake --> env
-    flake --> launcher
-  end
-
-  subgraph host["Outside the sandbox"]
-    zandy["zandy<br/>builds the Seatbelt profile"]
-    broker["broker<br/>~/.zandy/run/&lt;pid&gt;/broker.sock"]
-    gateway["gateway<br/>caddy, aws-sigv4-proxy"]
-    tools["adapter tools<br/>glab, aws"]
-    creds[("credentials<br/>zandy keychain, tool logins")]
-  end
-
-  subgraph sandbox["Inside the sandbox: Seatbelt"]
-    agent["program<br/>claude, opencode, …"]
-    client["zandy-client"]
-    project[("project directory")]
-  end
-
-  launcher --> zandy
-  env --> zandy
-  zandy -- starts --> gateway
-  zandy -- starts --> broker
-  zandy -- "sandbox_init, exec" --> agent
-  creds -. "named pipes" .-> gateway
-  creds -.-> tools
-  agent --> project
-  agent --> client
-  client -- "JSON-RPC + ticket" --> broker
-  broker -- runs --> tools
-  agent -- "HTTP, no key" --> gateway
-  gateway -- "adds key" --> model["model API"]
-  tools --> services["GitLab, AWS"]
-  agent -- "HTTPS" --> internet["internet"]
+```
+flake.nix
+   │ nix build
+   ▼
+env, bin/zandy-<name>
+   │
+   ▼
+zandy ── starts gateway and broker, then sandbox_init + exec
+   │
+   ▼
+┌─ Seatbelt sandbox ───────────┐       outside, with your credentials
+│                              │
+│  program (claude, opencode)  │── HTTP, no key ──▶ gateway ── adds key ──▶ model API
+│  zandy-client                │── JSON-RPC ──────▶ broker ─── runs ──────▶ glab, aws
+│  project directory           │
+│                              │
+└──────────────────────────────┘
 ```
 
 Nix builds the env and the launcher. zandy reads the env, starts the gateway and the broker, and runs the program under a Seatbelt profile. Credentials stay outside: the gateway adds the model key, and the broker runs your tools with their own logins. The sequence of a launch is in [runtime-flow.puml](runtime-flow.puml).
@@ -73,7 +51,7 @@ mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" >> ~
 Create your env from the template:
 
 ```sh
-mkdir -p ~/.config/zandy && cd ~/.config/zandy
+mkdir ~/sandboxes && cd ~/sandboxes
 nix flake init -t github:tbsklg/zandy.nix
 ```
 
@@ -81,7 +59,7 @@ Edit `flake.nix`: replace the `acme-*` profiles and remove any adapters you don'
 
 ```sh
 git init && git add -A            # flakes only see files git tracks
-nix profile add ~/.config/zandy   # older Nix: nix profile install
+nix profile add ~/sandboxes       # older Nix: nix profile install
 ```
 
 Before the first run you need:
@@ -92,7 +70,7 @@ Before the first run you need:
 Start the agent from a project directory:
 
 ```sh
-cd ~/code/widgets
+cd your-project
 zandy-claude
 ```
 
@@ -111,8 +89,8 @@ If a project needs its own toolchain, give it its own env and add the tools to `
 Keep that flake in its own directory outside the project. Then it doesn't have to be committed, and the agent can't edit it. Start it from the project root:
 
 ```sh
-cd ~/code/widgets
-nix run ~/.config/zandy/widgets
+cd your-project
+nix run ~/sandboxes/your-project
 ```
 
 ## Configuration
@@ -158,7 +136,7 @@ packages.aarch64-darwin.shell = zandy.lib.mkSandboxEnv {
 ```
 
 ```sh
-nix run ~/.config/zandy#shell
+nix run ~/sandboxes#shell
 ```
 
 To change the rules, extend a preset's list:
@@ -198,7 +176,7 @@ packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
 ```
 
 ```sh
-nix run ~/.config/zandy#curl -- https://example.com
+nix run ~/sandboxes#curl -- https://example.com
 ```
 
 Start with few rules and add what the [debug log](logging.md) shows as denied.
@@ -381,8 +359,8 @@ nix flake check                 # the same tests, built and run by Nix
 To try a local checkout of zandy in your env, override its `zandy` input:
 
 ```sh
-cd ~/code/widgets
-nix run --override-input zandy path:$HOME/code/zandy ~/.config/zandy
+cd your-project
+nix run --override-input zandy path:$HOME/code/zandy ~/sandboxes
 ```
 
 Use `path:`, not a plain path: a plain path is read as a git repo, which leaves out files git doesn't track yet.
