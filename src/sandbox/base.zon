@@ -1,0 +1,13 @@
+.{
+    .allow = .{
+        .{ .operation = .network_outbound, .filter = .{ .remote_unix_socket = .{ .param = "BROKER_SOCK" } } },
+    },
+    .deny = .{
+        .{ .operation = .file_read_data, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } } },
+        .{ .operation = .file_write_all, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } } },
+        .{ .operation = .file_read_data, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } } },
+        .{ .operation = .file_write_all, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } } },
+        .{ .operation = .mach_lookup, .filter = .{ .global_name = "com.apple.SecurityServer" } },
+        .{ .operation = .mach_lookup, .filter = .{ .global_name = "com.apple.securityd.xpc" } },
+    },
+}

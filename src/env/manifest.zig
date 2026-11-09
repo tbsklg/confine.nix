@@ -108,3 +108,12 @@ test "rejects an unknown sbpl operation" {
         \\{"preset":{"name":"claude","binary":"claude","profile":{"rules":[{"action":"allow","operation":"process_everything"}]}}}
     ));
 }
+
+test "a preset can't turn off deny default" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+
+    try std.testing.expectError(error.UnknownField, parse(arena_state.allocator(),
+        \\{"preset":{"name":"x","binary":"x","profile":{"deny_default":false,"rules":[]}}}
+    ));
+}

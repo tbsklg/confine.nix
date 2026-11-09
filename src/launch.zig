@@ -137,8 +137,6 @@ fn finalProfile(arena: std.mem.Allocator, profile: sbpl.Profile, running: ?gatew
     }) else &.{};
 
     const final: sbpl.Profile = .{
-        .version = profile.version,
-        .deny_default = profile.deny_default,
         .rules = try std.mem.concat(arena, sbpl.Rule, &.{ profile.rules, gateway_rules }),
         .message = tag,
     };

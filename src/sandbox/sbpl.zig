@@ -246,21 +246,13 @@ test "write rule" {
 }
 
 pub const Profile = struct {
-    version: []const u8 = "1",
-    deny_default: bool = true,
     rules: []const Rule = &.{},
     message: ?[]const u8 = null,
 
     pub fn write(self: Profile, writer: anytype) !void {
-        try writer.print("(version {s})\n", .{self.version});
-
-        if (self.deny_default) {
-            try writer.writeAll("(deny default");
-            try writeMessage(writer, self.message);
-            try writer.writeAll(")");
-        } else {
-            try writer.writeAll("(allow default)");
-        }
+        try writer.writeAll("(version 1)\n(deny default");
+        try writeMessage(writer, self.message);
+        try writer.writeAll(")");
 
         for (self.rules) |r| {
             try writer.writeAll("\n");

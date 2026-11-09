@@ -6,10 +6,22 @@ const FileSystem = @import("../env/manifest.zig").FileSystem;
 const Env = @import("../env/env.zig");
 const Rule = sbpl.Rule;
 
-pub fn buildProfile(arena: std.mem.Allocator, base: sbpl.Profile, env: Env, fs: FileSystem, store_paths: []const store.StorePath) !sbpl.Profile {
+pub fn buildProfile(arena: std.mem.Allocator, preset: sbpl.Profile, env: Env, fs: FileSystem, store_paths: []const store.StorePath) !sbpl.Profile {
     const fs_rules = try buildFilesystemRules(arena, env, fs);
-    const rules = try std.mem.concat(arena, sbpl.Rule, &.{ base.rules, try storeRules(arena, store_paths), fs_rules, &protected_rules, &secret_rules });
-    return .{ .version = base.version, .deny_default = base.deny_default, .rules = rules };
+    const rules = try std.mem.concat(arena, sbpl.Rule, &.{ &base_allow, preset.rules, try storeRules(arena, store_paths), fs_rules, &protected_rules, &base_deny });
+    return .{ .rules = rules };
+}
+
+const Target = struct { operation: sbpl.Operation, filter: ?sbpl.Filter = null };
+const Base = struct { allow: []const Target, deny: []const Target };
+const base: Base = @import("base.zon");
+const base_allow = rulesFrom(.allow, base.allow);
+const base_deny = rulesFrom(.deny, base.deny);
+
+fn rulesFrom(comptime action: sbpl.Action, comptime targets: []const Target) [targets.len]Rule {
+    var rules: [targets.len]Rule = undefined;
+    for (targets, &rules) |target, *rule| rule.* = .{ .action = action, .operation = target.operation, .filter = target.filter };
+    return rules;
 }
 
 const protected_literals = [_][]const u8{ "/flake.nix", "/flake.lock", "/.envrc", "/.git", "/.git/config" };
@@ -30,18 +42,6 @@ const protected_rules = blk: {
         }
     }
     break :blk rules;
-};
-
-const zandy_dir: sbpl.Filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } };
-const keychains_dir: sbpl.Filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } };
-
-const secret_rules = [_]Rule{
-    Rule.deny(.file_read_data, zandy_dir),
-    Rule.deny(.file_write_all, zandy_dir),
-    Rule.deny(.file_read_data, keychains_dir),
-    Rule.deny(.file_write_all, keychains_dir),
-    Rule.deny(.mach_lookup, .{ .global_name = "com.apple.SecurityServer" }),
-    Rule.deny(.mach_lookup, .{ .global_name = "com.apple.securityd.xpc" }),
 };
 
 fn storeRules(arena: std.mem.Allocator, store_paths: []const store.StorePath) ![]Rule {
@@ -177,8 +177,8 @@ test "a preset can't open the keychain services" {
     defer arena_state.deinit();
     const arena = arena_state.allocator();
 
-    const base = [_]Rule{Rule.allow(.mach_lookup, .{ .global_name = "com.apple.SecurityServer" })};
-    const profile = try buildProfile(arena, .{ .rules = &base }, .{ .home = "/Users/acme", .cwd = "/Users/acme/widgets", .tmpdir = "/private/tmp" }, .{}, &.{});
+    const preset = [_]Rule{Rule.allow(.mach_lookup, .{ .global_name = "com.apple.SecurityServer" })};
+    const profile = try buildProfile(arena, .{ .rules = &preset }, .{ .home = "/Users/acme", .cwd = "/Users/acme/widgets", .tmpdir = "/private/tmp" }, .{}, &.{});
 
     var aw = std.Io.Writer.Allocating.init(arena);
     try profile.write(&aw.writer);
@@ -188,4 +188,17 @@ test "a preset can't open the keychain services" {
     const deny = std.mem.indexOf(u8, written, "(deny mach-lookup (global-name \"com.apple.SecurityServer\"))").?;
     try std.testing.expect(allow < deny);
     try std.testing.expect(std.mem.indexOf(u8, written, "(deny mach-lookup (global-name \"com.apple.securityd.xpc\"))") != null);
+}
+
+test "the broker socket is reachable without a preset rule" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+
+    const profile = try buildProfile(arena, .{}, .{ .home = "/Users/acme", .cwd = "/Users/acme/widgets", .tmpdir = "/private/tmp" }, .{}, &.{});
+
+    var aw = std.Io.Writer.Allocating.init(arena);
+    try profile.write(&aw.writer);
+
+    try std.testing.expect(std.mem.indexOf(u8, aw.written(), "(allow network-outbound (remote unix-socket (path-literal (param \"BROKER_SOCK\"))))") != null);
 }
