@@ -32,27 +32,29 @@ You need [Nix](https://nixos.org/download) with flakes and a Claude login: run `
 
    The template plugs in [zandy-ports](https://github.com/tbsklg/zandy-ports) as the `ports` input, for the Claude Code preset and the Claude login gateway. Remove it if you bring your own preset and gateway.
 
-2. Run Claude Code in a project:
-
-   ```sh
-   cd your-project
-   nix run ~/sandboxes
-   ```
-
-3. Install it as `zandy-claude`:
+2. Install it as `zandy-claude`:
 
    ```sh
    nix profile add ~/sandboxes
    ```
 
+3. Run Claude Code in a project:
+
+   ```sh
+   cd your-project
+   zandy-claude
+   ```
+
+   `zandy-claude` runs the sandbox as you installed it. A change to `~/sandboxes` takes effect only when you upgrade, so nothing can widen the sandbox behind your back. Use `nix run ~/sandboxes` only to try out a flake you're editing.
+
 For other model backends, adapters and secrets, see the [docs](docs/README.md).
 
 ## Update
 
-After editing your flake:
+After editing your flake, review the change, then upgrade:
 
 ```sh
-nix profile upgrade --all
+git diff && nix profile upgrade --all
 ```
 
 To also pull the latest zandy and presets, run in the flake's directory:

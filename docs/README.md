@@ -80,21 +80,24 @@ zandy-claude
 
 To see the env's config, the broker methods and the Seatbelt profile without starting the agent, run `zandy-claude --zandy-config`.
 
-After changing `flake.nix`:
+After changing `flake.nix`, review the change, then upgrade. Until then, `zandy-claude` keeps running the sandbox you installed:
 
 ```sh
-git add -A && nix flake update && nix profile upgrade --all
+git diff && git add -A && nix flake update && nix profile upgrade --all
 ```
+
+Use `nix run ~/sandboxes` only to try out a flake you're editing. It builds the sandbox from the flake as it is right now, on every start.
 
 ## Per project
 
 If a project needs its own toolchain, give it its own env and add the tools to `packages`.
 
-Keep that flake in its own directory outside the project. Then it doesn't have to be committed, and the agent can't edit it. Start it from the project root:
+Keep that flake in its own directory outside the project. Then it doesn't have to be committed, and the agent can't edit it. Give it its own `name`, install it, and start it from the project root:
 
 ```sh
+nix profile add ~/sandboxes/your-project
 cd your-project
-nix run ~/sandboxes/your-project
+zandy-your-project
 ```
 
 ## Configuration
@@ -329,6 +332,7 @@ Whatever the command can do, the agent can do too. Prefer narrow methods with `s
 
 ## Security limits
 
+- **The sandbox is only as safe as its flake.** zandy runs the env from the Nix store, which the agent can't change. But the flake it was built from can, if the agent can write to it: an edited preset or rule takes effect at the next build. zandy can't check this, because the built env doesn't know where its flake lives. So keep the flake outside every directory the agent can write to: not in the project, not in `allowWrite`. Run the installed `zandy-<name>`, and review changes to the flake before `nix profile upgrade`. zandy denies writes to `flake.nix` and `flake.lock` in the project, but that doesn't cover the files a flake imports.
 - **Environment variables are readable.** On macOS, any process can read the environment and arguments of every other process run by the same user. Seatbelt can't block that. So don't export secrets in the shell that starts zandy. Store them with `--zandy-secret` instead.
 - **Tools can print their own credentials.** A `list` param that passes its items to glab lets the agent run `glab config get token`, and to aws `aws configure export-credentials`. Narrow methods with `string` and `choice` params avoid this.
 - **Tools keep their credentials in your home.** glab keeps its token in `~/.config/glab-cli/config.yml`, aws in `~/.aws`. The sandbox can't read them. Keep it that way: an `allowRead` for `~` or `~/.config` hands them to the agent, and then it can bypass the broker.

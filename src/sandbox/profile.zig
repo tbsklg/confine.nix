@@ -24,7 +24,7 @@ fn rulesFrom(comptime action: sbpl.Action, comptime targets: []const Target) [ta
     return rules;
 }
 
-const protected_literals = [_][]const u8{ "/flake.nix", "/flake.lock", "/.envrc", "/.git", "/.git/config" };
+const protected_literals = [_][]const u8{ "/.envrc", "/.git", "/.git/config" };
 const protected_subpaths = [_][]const u8{"/.git/hooks"};
 const protected_operations = [_]sbpl.Operation{ .file_write_all, .file_write_create, .file_write_data };
 
@@ -132,7 +132,7 @@ test "store paths may be executed and read, nothing else in the store" {
     try std.testing.expect(std.mem.indexOf(u8, written, "(subpath \"/nix/store\")") == null);
 }
 
-test "files that define the sandbox or run outside it stay read-only even when the user allows writing CWD" {
+test "flake.nix, flake.lock and git hooks in the project stay read-only even when the user allows writing CWD" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
