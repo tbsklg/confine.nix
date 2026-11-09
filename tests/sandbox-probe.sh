@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -u
 
+if [[ ${1-} == --exit ]]; then exit "$2"; fi
+
 failed=0
 
 outcome() {
