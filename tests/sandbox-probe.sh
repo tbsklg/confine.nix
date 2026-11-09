@@ -45,8 +45,6 @@ expect denied "write flake.nix" can_write ./flake.nix
 expect denied "write .envrc" can_write ./.envrc
 expect denied "write .git/config" can_write ./.git/config
 expect denied "write .git/hooks/" can_write ./.git/hooks/zandy-probe
-expect denied "create .claude/" can_mkdir ./.claude
-expect denied "write .mcp.json" can_write ./.mcp.json
 known_gap "write .git/ outside config and hooks" can_write ./.git/zandy-probe
 
 echo "--- secrets"
@@ -57,7 +55,6 @@ expect denied "list ~/.ssh" can_list ~/.ssh
 expect denied "read glab config" can_read ~/.config/glab-cli/config.yml
 expect denied "read ~/canary.txt" can_read ~/canary.txt
 known_gap "environment of processes outside the sandbox" can_see_env "$PPID" "${CANARY_ENV:-HOME=}"
-known_gap "list ~/.claude/projects of all projects" can_list ~/.claude/projects
 
 echo "--- programs"
 expect denied "run /usr/bin/true" can_exec /usr/bin/true

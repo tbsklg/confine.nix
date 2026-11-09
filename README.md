@@ -8,7 +8,7 @@ A sandbox for agents and other CLI tools on macOS. The configuration is declared
 
 A flake declares which files, programs and network destinations a program may use. zandy starts it under a profile that denies everything else, and keeps credentials outside the sandbox. This reduces what the program can reach, but it is not a complete isolation boundary; see [Security limits](docs/README.md#security-limits).
 
-zandy comes with presets for Claude Code and opencode. Any other program, from a shell to a test runner, runs the same way with a [preset of your own](docs/README.md#your-own-preset).
+Presets for Claude Code and opencode are in [zandy-ports](https://github.com/tbsklg/zandy-ports). Any other program, from a shell to a test runner, runs the same way with a [preset of your own](docs/README.md#your-own-preset).
 
 ## How it works
 
@@ -20,36 +20,30 @@ Apple Silicon only.
 
 ## Quickstart
 
-You need [Nix](https://nixos.org/download) with flakes and an AWS profile with Bedrock access.
+You need [Nix](https://nixos.org/download) with flakes and a Claude login: run `claude` once outside zandy and log in.
 
 1. Create a flake in any directory:
 
    ```sh
    mkdir ~/sandboxes && cd ~/sandboxes
-   nix flake init -t github:tbsklg/zandy.nix
+   nix flake init -t github:tbsklg/zandy-ports
    git init && git add -A
    ```
 
-2. In `flake.nix`, set your Bedrock profile and region:
-
-   ```nix
-   gateway = zandy.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
-   ```
-
-3. Run Claude Code in a project:
+2. Run Claude Code in a project:
 
    ```sh
    cd your-project
    nix run ~/sandboxes
    ```
 
-4. Install it as `zandy-claude`:
+3. Install it as `zandy-claude`:
 
    ```sh
    nix profile add ~/sandboxes
    ```
 
-The template also adds the GitLab and AWS adapters; remove them if you don't need them. For other model backends and secrets, see the [docs](docs/README.md).
+For other model backends, adapters and secrets, see the [docs](docs/README.md).
 
 ## Update
 
@@ -59,11 +53,13 @@ After editing your flake:
 nix profile upgrade --all
 ```
 
-To also pull the latest zandy, run in the flake's directory:
+To also pull the latest zandy and presets, run in the flake's directory:
 
 ```sh
-nix flake update zandy && nix profile upgrade --all
+nix flake update && nix profile upgrade --all
 ```
+
+`nix flake update ports` updates only the presets, `nix flake update zandy` only the base.
 
 If your flake is in a git repo, `git add` new files first. Flakes only see tracked files.
 

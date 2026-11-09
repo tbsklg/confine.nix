@@ -24,7 +24,7 @@ jobs:
 
       - name: Plant canaries
         run: |
-          mkdir -p ~/.aws ~/.ssh ~/.config/glab-cli ~/.claude/projects/canary
+          mkdir -p ~/.aws ~/.ssh ~/.config/glab-cli
           printf '[default]\naws_access_key_id = AKIACANARY\n' > ~/.aws/credentials
           echo canary > ~/.ssh/id_canary
           printf 'hosts:\n  gitlab.com:\n    token: canary\n' > ~/.config/glab-cli/config.yml

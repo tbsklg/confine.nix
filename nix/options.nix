@@ -16,7 +16,7 @@ in
     };
 
     preset = mkOption {
-      description = "The app to run and the sandbox rules it needs, e.g. `zandy.presets.claude`.";
+      description = "The app to run and the sandbox rules it needs, e.g. `ports.presets.claude` from zandy-ports.";
       type = types.submodule {
         options = {
           name = mkOption { type = types.str; description = "Name of the preset."; };
@@ -42,14 +42,14 @@ in
       type = types.listOf (types.functionTo types.attrs);
       default = [ ];
       description = "Tools the broker runs outside the sandbox on the agent's behalf. Their packages must not be in `packages`.";
-      example = lib.literalExpression ''[ (zandy.adapters.gitlab { }) (zandy.adapters.aws { profiles = [ "acme-dev" ]; }) ]'';
+      example = lib.literalExpression "[ say ]";
     };
 
     gateway = mkOption {
       type = types.nullOr (types.functionTo types.attrs);
       default = null;
       description = "The model backend the broker forwards to, adding auth outside the sandbox.";
-      example = lib.literalExpression ''zandy.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; }'';
+      example = lib.literalExpression ''ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; }'';
     };
 
 
