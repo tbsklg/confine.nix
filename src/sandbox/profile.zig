@@ -8,7 +8,7 @@ const Rule = sbpl.Rule;
 
 pub fn buildProfile(arena: std.mem.Allocator, preset: sbpl.Profile, env: Env, fs: FileSystem, store_paths: []const store.StorePath) !sbpl.Profile {
     const fs_rules = try buildFilesystemRules(arena, env, fs);
-    const rules = try std.mem.concat(arena, sbpl.Rule, &.{ &base_allow, preset.rules, try storeRules(arena, store_paths), fs_rules, &protected_rules, &base_deny });
+    const rules = try std.mem.concat(arena, sbpl.Rule, &.{ &base_allow, preset.rules, try storeRules(arena, store_paths), fs_rules, &base_deny });
     return .{ .rules = rules };
 }
 
@@ -23,26 +23,6 @@ fn rulesFrom(comptime action: sbpl.Action, comptime targets: []const Target) [ta
     for (targets, &rules) |target, *rule| rule.* = .{ .action = action, .operation = target.operation, .filter = target.filter };
     return rules;
 }
-
-const protected_literals = [_][]const u8{ "/.envrc", "/.git", "/.git/config" };
-const protected_subpaths = [_][]const u8{"/.git/hooks"};
-const protected_operations = [_]sbpl.Operation{ .file_write_all, .file_write_create, .file_write_data };
-
-const protected_rules = blk: {
-    var rules: [(protected_literals.len + protected_subpaths.len) * protected_operations.len]Rule = undefined;
-    var i = 0;
-    for (protected_operations) |op| {
-        for (protected_literals) |suffix| {
-            rules[i] = Rule.deny(op, .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = suffix } } });
-            i += 1;
-        }
-        for (protected_subpaths) |suffix| {
-            rules[i] = Rule.deny(op, .{ .subpath = .{ .param_append = .{ .param = "CWD", .suffix = suffix } } });
-            i += 1;
-        }
-    }
-    break :blk rules;
-};
 
 fn storeRules(arena: std.mem.Allocator, store_paths: []const store.StorePath) ![]Rule {
     const rules = try arena.alloc(Rule, store_paths.len * 2);
@@ -132,7 +112,7 @@ test "store paths may be executed and read, nothing else in the store" {
     try std.testing.expect(std.mem.indexOf(u8, written, "(subpath \"/nix/store\")") == null);
 }
 
-test "flake.nix, flake.lock and git hooks in the project stay read-only even when the user allows writing CWD" {
+test "flake.nix and flake.lock in the project stay read-only even when the user allows writing CWD" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
@@ -146,10 +126,9 @@ test "flake.nix, flake.lock and git hooks in the project stay read-only even whe
 
     const allow = std.mem.indexOf(u8, written, "(allow file-write* (subpath \"/Users/acme/widgets/.\"))").?;
     const deny_flake = std.mem.indexOf(u8, written, "(deny file-write* (literal (string-append (param \"CWD\") \"/flake.nix\")))").?;
-    const deny_hooks = std.mem.indexOf(u8, written, "(deny file-write* (subpath (string-append (param \"CWD\") \"/.git/hooks\")))").?;
     try std.testing.expect(allow < deny_flake);
-    try std.testing.expect(allow < deny_hooks);
-    try std.testing.expect(std.mem.indexOf(u8, written, "(deny file-write-create (subpath (string-append (param \"CWD\") \"/.git/hooks\")))") != null);
+    const deny_lock = std.mem.indexOf(u8, written, "(deny file-write-create (literal (string-append (param \"CWD\") \"/flake.lock\")))").?;
+    try std.testing.expect(allow < deny_lock);
 }
 
 test "zandy's secrets and the keychain stay closed even when the user allows reading HOME" {

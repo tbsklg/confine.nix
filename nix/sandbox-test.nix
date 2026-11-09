@@ -25,6 +25,5 @@ mkSandboxEnv {
       { action = "allow"; operation = "file_write_all"; filter = { subpath = { literal = "/private/tmp"; }; }; }
     ];
   };
-  filesystem.allowWrite = [ ".zandy-allowed" ".envrc" ];
   packages = [ (pkgs.writeShellScriptBin "sandbox-probe" (builtins.readFile ../tests/sandbox-probe.sh)) ];
 }
