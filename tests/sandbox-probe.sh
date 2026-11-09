@@ -46,8 +46,8 @@ echo "--- project"
 mkdir -p ./zandy-probe-dir
 expect allowed "write a file in the project" can_write ./zandy-probe
 expect allowed "write a file in a subdirectory" can_write ./zandy-probe-dir/zandy-probe
-expect allowed "write git objects" can_write ./.git/objects/zandy-probe
-expect allowed "write git refs" can_write ./.git/refs/heads/zandy-probe
+expect denied "write git objects" can_write ./.git/objects/zandy-probe
+expect denied "write git refs" can_write ./.git/refs/heads/zandy-probe
 expect denied "write flake.nix" can_write ./flake.nix
 expect denied "write a dot file" can_write ./.zandy-probe
 expect allowed "write a dot file in allowWrite" can_write ./.zandy-allowed
