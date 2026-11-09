@@ -193,7 +193,7 @@ The sandbox denies everything that no rule allows. zandy adds rules in this orde
 4. `filesystem` from your flake
 5. zandy's own denies: `flake.nix` and `flake.lock` in the project, `~/.zandy` and the keychain
 
-For the same operation, a later rule wins. A rule for a more specific operation, like `file-write-create`, wins over one for a wildcard, like `file-write*`, wherever it stands. zandy's own denies cover every write operation, so neither a preset nor `filesystem` can open them. A deny that only covers `file-write*` can be opened again by a later `allowWrite`.
+For the same operation, a later rule wins. A rule for a more specific operation, like `file-write-data`, wins over one for a wildcard, like `file-write*`, wherever it stands, before or after it. So a deny on `file-write*` alone doesn't hold: a preset's `allow file-write-data` opens it again, and so does a later `allowWrite`. zandy denies its own paths for `file-write*` and for every specific write operation, and a test checks that, so neither a preset nor `filesystem` can open them.
 
 zandy's own rules are in [src/sandbox/base.zon](../src/sandbox/base.zon). Rules for the project directory, like keeping `.envrc` and `.git` read-only, are policy and come from [zandy-ports](https://github.com/tbsklg/zandy-ports): `ports.rules.project`. The operations and filters a rule may use are in [src/sandbox/sbpl.zig](../src/sandbox/sbpl.zig).
 

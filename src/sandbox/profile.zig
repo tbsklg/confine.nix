@@ -181,3 +181,24 @@ test "the broker socket is reachable without a preset rule" {
 
     try std.testing.expect(std.mem.indexOf(u8, aw.written(), "(allow network-outbound (remote unix-socket (path-literal (param \"BROKER_SOCK\"))))") != null);
 }
+
+test "base denies every write operation on each path it keeps read-only" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+
+    var denied: std.StringHashMapUnmanaged(void) = .empty;
+    for (base.deny) |target| try denied.put(arena, try std.fmt.allocPrint(arena, "{t} {f}", .{ target.operation, std.fmt.alt(target.filter.?, .write) }), {});
+
+    for (base.deny) |target| {
+        if (!std.mem.startsWith(u8, @tagName(target.operation), "file_write")) continue;
+        for (std.meta.tags(sbpl.Operation)) |operation| {
+            if (!std.mem.startsWith(u8, @tagName(operation), "file_write")) continue;
+            const key = try std.fmt.allocPrint(arena, "{t} {f}", .{ operation, std.fmt.alt(target.filter.?, .write) });
+            if (!denied.contains(key)) {
+                std.debug.print("missing deny: {s}\n", .{key});
+                return error.TestUnexpectedResult;
+            }
+        }
+    }
+}

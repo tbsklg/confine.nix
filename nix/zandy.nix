@@ -4,7 +4,7 @@ let
 
   zandy = pkgs.stdenvNoCC.mkDerivation {
     pname = "zandy";
-    version = "0.0.8";
+    version = builtins.head (builtins.match ".*\n[[:space:]]*\.version = \"([^\"]+)\".*" (builtins.readFile ../build.zig.zon));
     src = pkgs.lib.fileset.toSource {
       root = ../.;
       fileset = pkgs.lib.fileset.unions [ ../build.zig ../build.zig.zon ../src ];
