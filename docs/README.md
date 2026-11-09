@@ -35,11 +35,13 @@ zandy ── starts gateway and broker, then sandbox_init + exec
 └──────────────────────────────┘
 ```
 
+zandy is the base: the launcher, the broker, `mkSandboxEnv` and `mkGateway`. Presets for programs like Claude Code and opencode and gateways for model backends live in [zandy-ports](https://github.com/tbsklg/zandy-ports) and are updated on their own.
+
 Nix builds the env and the launcher. zandy reads the env, starts the gateway and the broker, and runs the program under a Seatbelt profile. Credentials stay outside: the gateway adds the model key, and the broker runs your tools with their own logins. The sequence of a launch is in [runtime-flow.puml](runtime-flow.puml).
 
 ## Install
 
-zandy runs on macOS on Apple Silicon. Everything it needs comes from Nix: Zig, claude, glab, aws and the gateway proxies.
+zandy runs on macOS on Apple Silicon. Everything it needs comes from Nix: Zig, the program you run, your adapters' tools and the gateway proxies.
 
 Install Nix and enable flakes:
 
@@ -52,10 +54,10 @@ Create your env from the template:
 
 ```sh
 mkdir ~/sandboxes && cd ~/sandboxes
-nix flake init -t github:tbsklg/zandy.nix
+nix flake init -t github:tbsklg/zandy-ports
 ```
 
-Edit `flake.nix`: replace the `acme-*` profiles and remove any adapters you don't need. Then install it:
+Edit `flake.nix`: pick a [model backend](#model-backends) and add any adapters you need. Then install it:
 
 ```sh
 git init && git add -A            # flakes only see files git tracks
@@ -64,8 +66,8 @@ nix profile add ~/sandboxes       # older Nix: nix profile install
 
 Before the first run you need:
 
-- a [model backend](#model-backends), e.g. a logged-in AWS profile with Bedrock access
-- a login for your adapters' tools, e.g. `glab auth login` for the GitLab adapter
+- a [model backend](#model-backends), e.g. your Claude login
+- a login for your adapters' tools, e.g. `glab auth login` for glab
 
 Start the agent from a project directory:
 
@@ -79,7 +81,7 @@ To see the env's config, the broker methods and the Seatbelt profile without sta
 After changing `flake.nix`:
 
 ```sh
-git add -A && nix flake update zandy && nix profile upgrade --all
+git add -A && nix flake update && nix profile upgrade --all
 ```
 
 ## Per project
@@ -99,13 +101,10 @@ nix run ~/sandboxes/your-project
 zandy.lib.mkSandboxEnv {
   inherit pkgs;
   name = "claude";
-  preset = zandy.presets.claude;
+  preset = ports.presets.claude;
   packages = [ pkgs.ripgrep ];
-  gateway = zandy.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
-  adapters = [
-    (zandy.adapters.gitlab { })
-    (zandy.adapters.aws { profiles = [ "acme-dev" ]; })
-  ];
+  gateway = ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
+  adapters = [ say ];
   filesystem.allowRead = [ "~/notes" ];
 }
 ```
@@ -113,10 +112,10 @@ zandy.lib.mkSandboxEnv {
 | Option | What it sets |
 |---|---|
 | `name` | The env's name. The launcher is called `zandy-<name>` |
-| `preset` | The program to run and the sandbox rules it needs: `zandy.presets.claude`, `zandy.presets.opencode` or [your own](#your-own-preset) |
+| `preset` | The program to run and the sandbox rules it needs: one from [zandy-ports](https://github.com/tbsklg/zandy-ports), e.g. `ports.presets.claude`, or [your own](#your-own-preset) |
 | `packages` | Extra programs the agent may run |
 | `gateway` | The [model backend](#model-backends) |
-| `adapters` | Tools the broker runs outside the sandbox for the agent |
+| `adapters` | Tools the broker runs outside the sandbox for the agent, e.g. [your own](#write-your-own-adapter) |
 | `filesystem` | Extra paths the agent may read or write, or may not |
 
 A mistyped or unknown option fails at build time. For all options with their types and defaults, see [options.md](options.md). It is generated with `nix build .#options-doc`.
@@ -131,7 +130,7 @@ A shell with Claude Code's rules, to try things inside the sandbox by hand:
 packages.aarch64-darwin.shell = zandy.lib.mkSandboxEnv {
   inherit pkgs;
   name = "shell";
-  preset = zandy.presets.claude // { name = "shell"; binary = "bash"; args = [ ]; };
+  preset = ports.presets.claude // { name = "shell"; binary = "bash"; args = [ ]; };
 };
 ```
 
@@ -142,7 +141,7 @@ nix run ~/sandboxes#shell
 To change the rules, extend a preset's list:
 
 ```nix
-rules = zandy.presets.claude.rules ++ [
+rules = ports.presets.claude.rules ++ [
   { action = "deny"; operation = "file_read_data"; filter = { subpath = { literal = "/private/var/folders"; }; }; }
 ];
 ```
@@ -150,7 +149,7 @@ rules = zandy.presets.claude.rules ++ [
 Or filter it:
 
 ```nix
-rules = builtins.filter (rule: rule.operation != "sysctl_all") zandy.presets.claude.rules;
+rules = builtins.filter (rule: rule.operation != "sysctl_all") ports.presets.claude.rules;
 ```
 
 Or write one from scratch. This one runs curl, which may reach HTTPS hosts and nothing else, not even your project:
@@ -196,41 +195,36 @@ The agent reaches its model through a gateway. That's a local proxy that zandy s
 
 You pick one gateway per env. Without one, the agent reaches no model through zandy.
 
-### Bedrock
+Gateways for Bedrock, the Anthropic API, a Claude subscription and OpenAI are in [zandy-ports](https://github.com/tbsklg/zandy-ports#model-backends), e.g. `gateway = ports.gateways.anthropicOauth { };`.
+
+### Your own gateway
+
+`zandy.lib.mkGateway` builds a gateway on Caddy. This one sends every request to `api.anthropic.com` with an API key from zandy's keychain:
 
 ```nix
-gateway = zandy.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
+gateway = zandy.lib.mkGateway {
+  name = "anthropic";
+  host = "api.anthropic.com";
+  headers.X-Api-Key = [ "{env.ANTHROPIC_API_KEY}" ];
+  secrets.ANTHROPIC_API_KEY.keychain = { service = "anthropic-api-key"; };
+};
 ```
 
-Needs an AWS profile with Bedrock access in `~/.aws/config`, logged in with e.g. `aws sso login --profile acme-bedrock`.
+| Field | Meaning |
+|---|---|
+| `name` | Picks the preset's `gatewayEnv` entry |
+| `host` | The one upstream, reached over HTTPS on port 443 |
+| `headers` | Request headers to set. `{env.NAME}` is replaced with the secret `NAME` |
+| `addHeaders` | Request headers to add next to the client's own |
+| `secrets` | Where each secret lives, as for [adapters](#fields) |
 
-### Anthropic API key
+The gateway drops the client's own `Authorization` and `X-Api-Key` headers, so the agent can't send credentials of its own.
 
-```nix
-gateway = zandy.gateways.anthropic { };
-```
-
-Needs the API key, stored with `zandy-claude --zandy-secret anthropic-api-key`.
-
-### Claude subscription
-
-```nix
-gateway = zandy.gateways.anthropicOauth { };
-```
-
-Uses your Claude login. Run `claude` once outside zandy and log in. zandy reads the token from your login keychain at start.
-
-### OpenAI
-
-```nix
-gateway = zandy.gateways.openai { };
-```
-
-Needs the API key, stored with `zandy-claude --zandy-secret openai-api-key`. Set `host` for an OpenAI-compatible API other than `api.openai.com`. No preset uses this gateway yet.
+A gateway that isn't Caddy is an attrset with `name`, an `argv` in which `{port}` is replaced with the port zandy picks, and optionally `env`, `secrets` and `files`. The Bedrock gateway in zandy-ports is one.
 
 ## Secrets
 
-Adapters use the tool's own login: `aws sso login` for the AWS adapter, `glab auth login` for the GitLab adapter. The tool keeps its credentials where it always does, and the sandbox can't read them. You chose the tool, so how it stores its token is up to you and the tool.
+Adapters use the tool's own login, e.g. `aws sso login` for aws or `glab auth login` for glab. The tool keeps its credentials where it always does, and the sandbox can't read them. You chose the tool, so how it stores its token is up to you and the tool.
 
 zandy only keeps the secrets of its own gateways, in its own keychain, `~/.zandy/zandy.keychain-db`, outside the sandbox.
 
@@ -266,7 +260,7 @@ It reaches your tools through the broker:
 
 ```sh
 zandy-client discover
-zandy-client call gitlab.cli '{"args":["issue","list","--repo","group/name"]}'
+zandy-client call mac.say '{"voice":"Bad News","text":"the tests failed"}'
 ```
 
 The broker runs the command outside the sandbox. zandy doesn't judge what the command does. The token's scopes and the profile's IAM permissions decide that.
@@ -308,7 +302,7 @@ The agent then calls:
 zandy-client call mac.say '{"voice":"Bad News","text":"the tests failed"}'
 ```
 
-If the tool has its own login, let it use that, like [nix/adapters/gitlab.nix](../nix/adapters/gitlab.nix). Only for a tool without one, hand it a secret from zandy's keychain with `secrets` and `files`.
+If the tool has its own login, let it use that. Only for a tool without one, hand it a secret from zandy's keychain with `secrets` and `files`.
 
 ### Fields
 
@@ -334,20 +328,19 @@ Whatever the command can do, the agent can do too. Prefer narrow methods with `s
 ## Security limits
 
 - **Environment variables are readable.** On macOS, any process can read the environment and arguments of every other process run by the same user. Seatbelt can't block that. So don't export secrets in the shell that starts zandy. Store them with `--zandy-secret` instead.
-- **Tools can print their own credentials.** `gitlab.cli` with `["config", "get", "token"]` returns the GitLab token. Narrow methods avoid this.
+- **Tools can print their own credentials.** A `list` param that passes its items to glab lets the agent run `glab config get token`, and to aws `aws configure export-credentials`. Narrow methods with `string` and `choice` params avoid this.
 - **Tools keep their credentials in your home.** glab keeps its token in `~/.config/glab-cli/config.yml`, aws in `~/.aws`. The sandbox can't read them. Keep it that way: an `allowRead` for `~` or `~/.config` hands them to the agent, and then it can bypass the broker.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| Bedrock: `refresh cached SSO token failed … InvalidGrantException` | The SSO session expired. Run `aws sso login --profile <profile>` |
 | `Operation not permitted` | Look up the blocked operation in the [debug log](logging.md) |
 | git: `unable to access '~/.config/git/config': Operation not permitted` | Your config is a symlink, e.g. from home-manager. The sandbox checks the target, so add it to `filesystem.allowRead` |
 | claude tries to resolve AWS credentials inside the sandbox | Remove `AWS_PROFILE` and `awsCredentialExport` from `~/.claude/settings.json` |
 | `NameTooLong` at start | Your `$HOME` path is too long. `~/.zandy/run/<pid>/broker.sock` must fit in 104 bytes |
 | opencode: `operation not permitted mkdir '/var/folders/…'` | Start opencode once without zandy, then with zandy |
-| A few info lines on stderr before the agent starts | That's `aws-sigv4-proxy` starting up. They're harmless |
+| A few info lines on stderr before the agent starts | That's the gateway starting up, e.g. `aws-sigv4-proxy` for Bedrock. They're harmless |
 
 ## Development
 

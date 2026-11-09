@@ -49,7 +49,7 @@ list of function that evaluates to a(n) (attribute set)
 *Example:*
 
 ```nix
-[ (zandy.adapters.gitlab { }) (zandy.adapters.aws { profiles = [ "acme-dev" ]; }) ]
+[ say ]
 ```
 
 
@@ -162,7 +162,7 @@ null
 *Example:*
 
 ```nix
-zandy.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; }
+ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; }
 ```
 
 
@@ -192,7 +192,7 @@ string matching the pattern \[a-z0-9-]+
 
 
 
-The app to run and the sandbox rules it needs, e\.g\. ` zandy.presets.claude `\.
+The app to run and the sandbox rules it needs, e\.g\. ` ports.presets.claude ` from zandy-ports\.
 
 
 
