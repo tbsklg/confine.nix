@@ -26,9 +26,11 @@ You need [Nix](https://nixos.org/download) with flakes and a Claude login: run `
 
    ```sh
    mkdir ~/sandboxes && cd ~/sandboxes
-   nix flake init -t github:tbsklg/zandy-ports
+   nix flake init -t github:tbsklg/zandy.nix
    git init && git add -A
    ```
+
+   The template plugs in [zandy-ports](https://github.com/tbsklg/zandy-ports) as the `ports` input, for the Claude Code preset and the Claude login gateway. Remove it if you bring your own preset and gateway.
 
 2. Run Claude Code in a project:
 

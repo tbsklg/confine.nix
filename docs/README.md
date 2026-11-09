@@ -54,8 +54,10 @@ Create your env from the template:
 
 ```sh
 mkdir ~/sandboxes && cd ~/sandboxes
-nix flake init -t github:tbsklg/zandy-ports
+nix flake init -t github:tbsklg/zandy.nix
 ```
+
+The template has two inputs: `zandy`, the base, and `ports`, [zandy-ports](https://github.com/tbsklg/zandy-ports) with its presets and gateways. `ports` follows your `zandy`, so both use the same base. Drop `ports` if you write your own preset and gateway.
 
 Edit `flake.nix`: pick a [model backend](#model-backends) and add any adapters you need. Then install it:
 

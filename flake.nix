@@ -16,6 +16,11 @@
         mkGateway = import ./nix/gateway.nix;
       };
 
+      templates.default = {
+        path = ./templates/default;
+        description = "A zandy sandbox env with zandy-ports plugged in: run with `nix run`, install with `nix profile add`";
+      };
+
       packages.${system} = {
         inherit zandy zandy-client;
         default = zandy;
