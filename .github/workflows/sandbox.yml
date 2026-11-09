@@ -13,22 +13,6 @@ jobs:
 
       - uses: cachix/install-nix-action@v31
 
-      - name: Build the test env
-        run: |
-          nix build --impure --print-build-logs --expr '
-            let
-              flake = builtins.getFlake (toString ./.);
-              pkgs = import flake.inputs.nixpkgs { system = "aarch64-darwin"; };
-            in
-            import ./nix/sandbox-test.nix { inherit pkgs; inherit (flake.lib) mkSandboxEnv; }'
-
-      - name: Pass on the exit code
-        run: |
-          status=0
-          "$GITHUB_WORKSPACE/result/bin/zandy-sandbox-test" --exit 3 || status=$?
-          echo "zandy exited with $status, expected 3"
-          test "$status" -eq 3
-
       - name: Plant canaries
         run: |
           mkdir -p ~/.aws ~/.ssh ~/.config/glab-cli
@@ -38,9 +22,4 @@ jobs:
           echo canary > ~/canary.txt
 
       - name: Probe the sandbox
-        run: |
-          project=$(mktemp -d)
-          cd "$project"
-          git init -q
-          touch flake.nix .envrc
-          CANARY_ENV=zandy-canary "$GITHUB_WORKSPACE/result/bin/zandy-sandbox-test"
+        run: tests/run-probe.sh
