@@ -185,14 +185,17 @@ nix run ~/sandboxes#curl -- https://example.com
 
 Start with few rules and add what the [debug log](logging.md) shows as denied.
 
-The sandbox denies everything that no rule allows. zandy adds rules in this order, and a later rule wins:
+The sandbox denies everything that no rule allows. zandy adds rules in this order:
 
-1. the preset's `rules`
-2. read and execute for the env's store paths
-3. `filesystem` from your flake
-4. zandy's own denies: `flake.nix`, `flake.lock`, `.envrc`, `.git/config`, `.git/hooks`, `~/.zandy` and the keychain
+1. zandy's own allows: the broker socket
+2. the preset's `rules`
+3. read and execute for the env's store paths
+4. `filesystem` from your flake
+5. zandy's own denies: `flake.nix` and `flake.lock` in the project, `~/.zandy` and the keychain
 
-So no preset can open what zandy protects. The operations and filters a rule may use are in [src/sandbox/sbpl.zig](../src/sandbox/sbpl.zig).
+For the same operation, a later rule wins. A rule for a more specific operation, like `file-write-create`, wins over one for a wildcard, like `file-write*`, wherever it stands. zandy's own denies cover every write operation, so neither a preset nor `filesystem` can open them. A deny that only covers `file-write*` can be opened again by a later `allowWrite`.
+
+zandy's own rules are in [src/sandbox/base.zon](../src/sandbox/base.zon). Rules for the project directory, like keeping `.envrc` and `.git` read-only, are policy and come from [zandy-ports](https://github.com/tbsklg/zandy-ports): `ports.rules.project`. The operations and filters a rule may use are in [src/sandbox/sbpl.zig](../src/sandbox/sbpl.zig).
 
 ## Model backends
 
@@ -256,7 +259,7 @@ Don't export secrets in the shell that starts zandy. See [Security limits](#secu
 
 The agent:
 
-- can write to the project directory, except `flake.nix`, `flake.lock`, `.envrc`, `.git/config` and `.git/hooks`, and the agent's own project config, which would run outside the sandbox the next time you start the agent without zandy: `.claude/` and `.mcp.json` for Claude Code, `.opencode/` and `opencode.json` for opencode
+- can write to the project directory if your preset uses `ports.rules.project`, as the template does. It can't write `flake.nix` and `flake.lock` (zandy), `.envrc`, `.git/config` and `.git/hooks` (the project rules), or the agent's own project config, which would run outside the sandbox the next time you start the agent without zandy: `.claude/` and `.mcp.json` for Claude Code, `.opencode/` and `opencode.json` for opencode (the presets)
 - can run only programs from the env, so no Homebrew, `/usr/bin` or downloaded binaries
 - can connect only to port 443, DNS and the gateway
 - can't read the keychain or `~/.zandy`
