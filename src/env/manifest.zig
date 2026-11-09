@@ -117,3 +117,18 @@ test "a preset can't turn off deny default" {
         \\{"preset":{"name":"x","binary":"x","profile":{"deny_default":false,"rules":[]}}}
     ));
 }
+
+test "parses a rule that allows the project except dot paths" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+
+    const manifest = try parse(arena_state.allocator(),
+        \\{"preset":{"name":"x","binary":"x","profile":{"rules":[
+        \\  {"action":"allow","operation":"file_all","filter":{"require_all":[{"subpath":{"param":"CWD"}},{"require_not":{"regex":"/\\."}}]}}
+        \\]}}}
+    );
+
+    const filter = manifest.preset.profile.rules[0].filter.?;
+    try std.testing.expectEqualStrings("CWD", filter.require_all[0].subpath.param);
+    try std.testing.expectEqualStrings("/\\.", filter.require_all[1].require_not.regex);
+}

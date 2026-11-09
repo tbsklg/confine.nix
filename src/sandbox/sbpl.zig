@@ -120,9 +120,28 @@ pub const Filter = union(enum) {
     target: []const u8,
     remote_tcp: []const u8,
     remote_unix_socket: Expr,
+    regex: []const u8,
+    require_all: []const Filter,
+    require_not: *const Filter,
 
-    pub fn write(self: Filter, writer: anytype) !void {
+    pub fn write(self: Filter, writer: *std.Io.Writer) std.Io.Writer.Error!void {
         switch (self) {
+            .regex => |pattern| {
+                try writer.print("(regex #\"{s}\")", .{pattern});
+            },
+            .require_all => |filters| {
+                try writer.writeAll("(require-all");
+                for (filters) |filter| {
+                    try writer.writeAll(" ");
+                    try filter.write(writer);
+                }
+                try writer.writeAll(")");
+            },
+            .require_not => |filter| {
+                try writer.writeAll("(require-not ");
+                try filter.write(writer);
+                try writer.writeAll(")");
+            },
             .remote_tcp => |address| {
                 try writer.print("(remote tcp \"{s}\")", .{address});
             },
@@ -192,6 +211,12 @@ test "write filter" {
 
     try (Filter{ .remote_unix_socket = .{ .param = "BROKER_SOCK" } }).write(w);
     try std.testing.expectEqualStrings("(remote unix-socket (path-literal (param \"BROKER_SOCK\")))", aw.written());
+
+    aw.clearRetainingCapacity();
+
+    const dot_path: Filter = .{ .regex = "/\\." };
+    try (Filter{ .require_all = &.{ .{ .subpath = .{ .param = "CWD" } }, .{ .require_not = &dot_path } } }).write(w);
+    try std.testing.expectEqualStrings("(require-all (subpath (param \"CWD\")) (require-not (regex #\"/\\.\")))", aw.written());
 }
 
 pub const Rule = struct {
