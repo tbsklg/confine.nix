@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -u
 
+if [[ ${1-} == --exit ]]; then exit "$2"; fi
+
 failed=0
 
 outcome() {
@@ -40,12 +42,9 @@ known_gap() {
 }
 
 echo "--- project"
-expect allowed "write a file in the project" can_write ./.zandy-probe
+expect allowed "write a file in the project" can_write ./zandy-probe
 expect denied "write flake.nix" can_write ./flake.nix
-expect denied "write .envrc" can_write ./.envrc
-expect denied "write .git/config" can_write ./.git/config
-expect denied "write .git/hooks/" can_write ./.git/hooks/zandy-probe
-known_gap "write .git/ outside config and hooks" can_write ./.git/zandy-probe
+expect denied "write flake.lock" can_write ./flake.lock
 
 echo "--- secrets"
 expect denied "list ~/.zandy" can_list ~/.zandy

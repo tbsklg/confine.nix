@@ -1,0 +1,23 @@
+.{
+    .allow = .{
+        .{ .operation = .network_outbound, .filter = .{ .remote_unix_socket = .{ .param = "BROKER_SOCK" } } },
+    },
+    .deny = .{
+        .{ .operation = .file_write_all, .filter = .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = "/flake.nix" } } } },
+        .{ .operation = .file_write_create, .filter = .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = "/flake.nix" } } } },
+        .{ .operation = .file_write_data, .filter = .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = "/flake.nix" } } } },
+        .{ .operation = .file_write_all, .filter = .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = "/flake.lock" } } } },
+        .{ .operation = .file_write_create, .filter = .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = "/flake.lock" } } } },
+        .{ .operation = .file_write_data, .filter = .{ .literal = .{ .param_append = .{ .param = "CWD", .suffix = "/flake.lock" } } } },
+        .{ .operation = .file_read_data, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } } },
+        .{ .operation = .file_write_all, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } } },
+        .{ .operation = .file_write_create, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } } },
+        .{ .operation = .file_write_data, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/.zandy" } } } },
+        .{ .operation = .file_read_data, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } } },
+        .{ .operation = .file_write_all, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } } },
+        .{ .operation = .file_write_create, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } } },
+        .{ .operation = .file_write_data, .filter = .{ .subpath = .{ .param_append = .{ .param = "HOME", .suffix = "/Library/Keychains" } } } },
+        .{ .operation = .mach_lookup, .filter = .{ .global_name = "com.apple.SecurityServer" } },
+        .{ .operation = .mach_lookup, .filter = .{ .global_name = "com.apple.securityd.xpc" } },
+    },
+}

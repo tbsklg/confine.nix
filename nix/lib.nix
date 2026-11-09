@@ -67,7 +67,7 @@ let
               "" \
               " ╔═╗╔═╗╔╗╔╔╦╗╦ ╦   ${label}" \
               " ╔═╝╠═╣║║║ ║║╚╦╝   ''${PWD/#"$HOME"/\~}" \
-              " ╚═╝╩ ╩╝╚╝═╩╝ ╩    sandboxed · ${backend}" \
+              " ╚═╝╩ ╩╝╚╝═╩╝ ╩    sandboxed · ${backend} · zandy ${zandy.version}" \
               "" >&2
           fi
           exec ${zandy}/bin/zandy --env ${env} "$@"

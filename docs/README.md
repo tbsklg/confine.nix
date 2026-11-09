@@ -80,21 +80,24 @@ zandy-claude
 
 To see the env's config, the broker methods and the Seatbelt profile without starting the agent, run `zandy-claude --zandy-config`.
 
-After changing `flake.nix`:
+After changing `flake.nix`, review the change, then upgrade. Until then, `zandy-claude` keeps running the sandbox you installed:
 
 ```sh
-git add -A && nix flake update && nix profile upgrade --all
+git diff && git add -A && nix flake update && nix profile upgrade --all
 ```
+
+Use `nix run ~/sandboxes` only to try out a flake you're editing. It builds the sandbox from the flake as it is right now, on every start.
 
 ## Per project
 
 If a project needs its own toolchain, give it its own env and add the tools to `packages`.
 
-Keep that flake in its own directory outside the project. Then it doesn't have to be committed, and the agent can't edit it. Start it from the project root:
+Keep that flake in its own directory outside the project. Then it doesn't have to be committed, and the agent can't edit it. Give it its own `name`, install it, and start it from the project root:
 
 ```sh
+nix profile add ~/sandboxes/your-project
 cd your-project
-nix run ~/sandboxes/your-project
+zandy-your-project
 ```
 
 ## Configuration
@@ -182,14 +185,17 @@ nix run ~/sandboxes#curl -- https://example.com
 
 Start with few rules and add what the [debug log](logging.md) shows as denied.
 
-The sandbox denies everything that no rule allows. zandy adds rules in this order, and a later rule wins:
+The sandbox denies everything that no rule allows. zandy adds rules in this order:
 
-1. the preset's `rules`
-2. read and execute for the env's store paths
-3. `filesystem` from your flake
-4. zandy's own denies: `flake.nix`, `flake.lock`, `.envrc`, `.git/config`, `.git/hooks`, `~/.zandy` and the keychain
+1. zandy's own allows: the broker socket
+2. the preset's `rules`
+3. read and execute for the env's store paths
+4. `filesystem` from your flake
+5. zandy's own denies: `flake.nix` and `flake.lock` in the project, `~/.zandy` and the keychain
 
-So no preset can open what zandy protects. The operations and filters a rule may use are in [src/sandbox/sbpl.zig](../src/sandbox/sbpl.zig).
+For the same operation, a later rule wins. A rule for a more specific operation, like `file-write-data`, wins over one for a wildcard, like `file-write*`, wherever it stands, before or after it. So a deny on `file-write*` alone doesn't hold: a preset's `allow file-write-data` opens it again, and so does a later `allowWrite`. zandy denies its own paths for `file-write*` and for every specific write operation, and a test checks that, so neither a preset nor `filesystem` can open them.
+
+zandy's own rules are in [src/sandbox/base.zon](../src/sandbox/base.zon). Rules for the project directory, like keeping `.envrc` and `.git` read-only, are policy and come from [zandy-ports](https://github.com/tbsklg/zandy-ports): `ports.rules.project`. The operations and filters a rule may use are in [src/sandbox/sbpl.zig](../src/sandbox/sbpl.zig).
 
 ## Model backends
 
@@ -253,7 +259,7 @@ Don't export secrets in the shell that starts zandy. See [Security limits](#secu
 
 The agent:
 
-- can write to the project directory, except `flake.nix`, `flake.lock`, `.envrc`, `.git/config` and `.git/hooks`, and the agent's own project config, which would run outside the sandbox the next time you start the agent without zandy: `.claude/` and `.mcp.json` for Claude Code, `.opencode/` and `opencode.json` for opencode
+- can write to the project directory if your preset uses `ports.rules.project`, as the template does. It can't write `flake.nix` and `flake.lock` (zandy), `.envrc`, `.git/config` and `.git/hooks` (the project rules), or the agent's own project config, which would run outside the sandbox the next time you start the agent without zandy: `.claude/` and `.mcp.json` for Claude Code, `.opencode/` and `opencode.json` for opencode (the presets)
 - can run only programs from the env, so no Homebrew, `/usr/bin` or downloaded binaries
 - can connect only to port 443, DNS and the gateway
 - can't read the keychain or `~/.zandy`
@@ -329,6 +335,7 @@ Whatever the command can do, the agent can do too. Prefer narrow methods with `s
 
 ## Security limits
 
+- **The sandbox is only as safe as its flake.** zandy runs the env from the Nix store, which the agent can't change. But the flake it was built from can, if the agent can write to it: an edited preset or rule takes effect at the next build. zandy can't check this, because the built env doesn't know where its flake lives. So keep the flake outside every directory the agent can write to: not in the project, not in `allowWrite`. Run the installed `zandy-<name>`, and review changes to the flake before `nix profile upgrade`. zandy denies writes to `flake.nix` and `flake.lock` in the project, but that doesn't cover the files a flake imports.
 - **Environment variables are readable.** On macOS, any process can read the environment and arguments of every other process run by the same user. Seatbelt can't block that. So don't export secrets in the shell that starts zandy. Store them with `--zandy-secret` instead.
 - **Tools can print their own credentials.** A `list` param that passes its items to glab lets the agent run `glab config get token`, and to aws `aws configure export-credentials`. Narrow methods with `string` and `choice` params avoid this.
 - **Tools keep their credentials in your home.** glab keeps its token in `~/.config/glab-cli/config.yml`, aws in `~/.aws`. The sandbox can't read them. Keep it that way: an `allowRead` for `~` or `~/.config` hands them to the agent, and then it can bypass the broker.

@@ -17,7 +17,7 @@
         default = zandy.lib.mkSandboxEnv {
           inherit pkgs;
           name = "claude";
-          preset = ports.presets.claude;
+          preset = ports.presets.claude // { rules = ports.rules.project ++ ports.presets.claude.rules; };
           gateway = ports.gateways.anthropicOauth { };
         };
       });
