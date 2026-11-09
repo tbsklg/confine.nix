@@ -16,7 +16,7 @@ const log = std.log.scoped(.zandy);
 const Argv = [:null]const ?[*:0]const u8;
 const Parameters = [8:null]?[*:0]const u8;
 
-pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []const [:0]const u8, profile: sbpl.Profile, env: Env) !void {
+pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []const [:0]const u8, profile: sbpl.Profile, env: Env) !u8 {
     const arena = init.arena.allocator();
     const io = init.io;
     const environ = init.environ_map;
@@ -58,9 +58,24 @@ pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []cons
 
     const status = waitAgent(pid) catch |err| {
         log.err("waiting for agent failed: {t}", .{err});
-        return;
+        return err;
     };
     logExit(status, started.untilNow(io, .awake).toMilliseconds());
+    return exitCode(status);
+}
+
+fn exitCode(status: u32) u8 {
+    if (std.c.W.IFEXITED(status)) return std.c.W.EXITSTATUS(status);
+    if (std.c.W.IFSIGNALED(status)) return 128 +| @as(u8, @truncate(@intFromEnum(std.c.W.TERMSIG(status))));
+    return 1;
+}
+
+test "exitCode passes on the agent's exit code" {
+    try std.testing.expectEqual(3, exitCode(3 << 8));
+}
+
+test "exitCode reports a signal as 128 plus its number" {
+    try std.testing.expectEqual(137, exitCode(9));
 }
 
 fn waitAgent(pid: std.c.pid_t) !u32 {

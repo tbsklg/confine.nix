@@ -50,7 +50,8 @@ expect allowed "write git objects" can_write ./.git/objects/zandy-probe
 expect allowed "write git refs" can_write ./.git/refs/heads/zandy-probe
 expect denied "write flake.nix" can_write ./flake.nix
 expect denied "write a dot file" can_write ./.zandy-probe
-expect denied "write .envrc" can_write ./.envrc
+expect allowed "write a dot file in allowWrite" can_write ./.zandy-allowed
+expect denied "write .envrc, even in allowWrite" can_write ./.envrc
 expect denied "write .envrc in a subdirectory" can_write ./zandy-probe-dir/.envrc
 expect denied "create .git in a subdirectory" can_mkdir ./zandy-probe-dir/.git
 expect denied "write .git/config" can_write ./.git/config

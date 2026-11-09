@@ -50,7 +50,7 @@ pub fn main(init: std.process.Init) !void {
     const env = try Env.init(arena, io, envMap);
     const profile = try profile_mod.buildProfile(arena, sandbox_env.manifest.preset.profile, env, sandbox_env.manifest.filesystem, sandbox_env.closure);
 
-    try launch_mod.launch(init, sandbox_env, launch.args, profile, env);
+    std.process.exit(try launch_mod.launch(init, sandbox_env, launch.args, profile, env));
 }
 
 fn storeSecret(arena: std.mem.Allocator, io: std.Io, envMap: *std.process.Environ.Map, service: []const u8) !void {
