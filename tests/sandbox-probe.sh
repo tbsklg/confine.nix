@@ -45,6 +45,7 @@ echo "--- project"
 expect allowed "write a file in the project" can_write ./zandy-probe
 expect denied "write flake.nix" can_write ./flake.nix
 expect denied "write flake.lock" can_write ./flake.lock
+expect denied "write zandy.toml" can_write ./zandy.toml
 
 echo "--- secrets"
 expect denied "list ~/.zandy" can_list ~/.zandy

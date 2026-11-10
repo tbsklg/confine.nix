@@ -14,7 +14,7 @@ let
     properties = lib.mapAttrs
       (_: port: {
         type = "object";
-        description = port.description + lib.optionalString (port.open or false) ". Open: the agent can run any command and make the tool print its credential.";
+        description = port.description + lib.optionalString (port.open or false) ". Open: the program can run any command and make the tool print its credential.";
         additionalProperties = false;
         properties = lib.mapAttrs (_: arg) port.args;
         required = lib.attrNames (lib.filterAttrs (_: spec: !(spec ? default)) port.args);
@@ -35,8 +35,8 @@ let
         oneOf = lib.mapAttrsToList (name: port: { const = name; inherit (port) description; }) catalog.presets;
       };
       packages = strings "Extra packages on the sandbox PATH, by nixpkgs attribute, e.g. ripgrep or python3Packages.pytest.";
-      gateway = table catalog.gateways // { maxProperties = 1; description = "The model backend, at most one."; };
-      adapters = table catalog.adapters // { description = "Tools the broker runs outside the sandbox on the agent's behalf."; };
+      gateway = table catalog.gateways // { maxProperties = 1; description = "A proxy that adds an API's credential outside the sandbox, at most one."; };
+      adapters = table catalog.adapters // { description = "Tools the broker runs outside the sandbox on the program's behalf."; };
       define = {
         type = "object";
         additionalProperties = false;
@@ -51,16 +51,16 @@ let
             setEnv = { type = "object"; additionalProperties.type = "string"; description = "Env vars set for the command."; };
             capabilities = {
               type = "array";
-              description = "The methods the agent can call, as <adapter>.<name>.";
+              description = "The methods the program can call, as <adapter>.<name>.";
               items = object [ "name" "description" "argv" ] {
                 name = { type = "string"; description = "Method name."; };
-                description = { type = "string"; description = "What the method does, shown to the agent."; };
+                description = { type = "string"; description = "What the method does, shown to the program."; };
                 params = {
                   type = "array";
                   items = object [ "name" "description" ] {
                     name = { type = "string"; description = "Param name, used as {name} in argv."; };
                     kind = { enum = [ "string" "choice" ]; default = "string"; description = "string or choice; values can't start with -."; };
-                    description = { type = "string"; description = "What the param is, shown to the agent."; };
+                    description = { type = "string"; description = "What the param is, shown to the program."; };
                     choices = strings "The allowed values of a choice.";
                   };
                 };

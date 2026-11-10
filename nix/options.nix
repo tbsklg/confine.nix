@@ -41,23 +41,23 @@ in
     adapters = mkOption {
       type = types.listOf (types.functionTo types.attrs);
       default = [ ];
-      description = "Tools the broker runs outside the sandbox on the agent's behalf. Their packages must not be in `packages`.";
+      description = "Tools the broker runs outside the sandbox on the program's behalf. Their packages must not be in `packages`.";
       example = lib.literalExpression "[ say ]";
     };
 
     gateway = mkOption {
       type = types.nullOr (types.functionTo types.attrs);
       default = null;
-      description = "The model backend the broker forwards to, adding auth outside the sandbox.";
+      description = "A proxy to one API that adds its credential outside the sandbox.";
       example = lib.literalExpression ''ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; }'';
     };
 
 
     filesystem = {
-      allowRead = paths "Extra paths the agent may read.";
-      denyRead = paths "Paths the agent may not read.";
-      allowWrite = paths "Extra paths the agent may write.";
-      denyWrite = paths "Paths the agent may not write.";
+      allowRead = paths "Extra paths the program may read.";
+      denyRead = paths "Paths the program may not read.";
+      allowWrite = paths "Extra paths the program may write.";
+      denyWrite = paths "Paths the program may not write.";
     };
   };
 }

@@ -29,7 +29,7 @@ list of package
 
 ## adapters
 
-Tools the broker runs outside the sandbox on the agent’s behalf\. Their packages must not be in ` packages `\.
+Tools the broker runs outside the sandbox on the program’s behalf\. Their packages must not be in ` packages `\.
 
 
 
@@ -58,7 +58,7 @@ list of function that evaluates to a(n) (attribute set)
 
 
 
-Extra paths the agent may read\. Absolute, relative to the working directory, or starting with ` ~ `\.
+Extra paths the program may read\. Absolute, relative to the working directory, or starting with ` ~ `\.
 
 
 
@@ -79,7 +79,7 @@ list of string
 
 
 
-Extra paths the agent may write\. Absolute, relative to the working directory, or starting with ` ~ `\.
+Extra paths the program may write\. Absolute, relative to the working directory, or starting with ` ~ `\.
 
 
 
@@ -100,7 +100,7 @@ list of string
 
 
 
-Paths the agent may not read\. Absolute, relative to the working directory, or starting with ` ~ `\.
+Paths the program may not read\. Absolute, relative to the working directory, or starting with ` ~ `\.
 
 
 
@@ -121,7 +121,7 @@ list of string
 
 
 
-Paths the agent may not write\. Absolute, relative to the working directory, or starting with ` ~ `\.
+Paths the program may not write\. Absolute, relative to the working directory, or starting with ` ~ `\.
 
 
 
@@ -142,7 +142,7 @@ list of string
 
 
 
-The model backend the broker forwards to, adding auth outside the sandbox\.
+A proxy to one API that adds its credential outside the sandbox\.
 
 
 
@@ -342,3 +342,5 @@ list of (attribute set)
 ```nix
 [ ]
 ```
+
+

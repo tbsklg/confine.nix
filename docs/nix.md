@@ -65,7 +65,7 @@ The sandbox denies everything no rule allows. zandy adds rules in this order:
 2. the preset's `rules`
 3. read and execute for the env's store paths
 4. `filesystem`
-5. zandy's own denies: `flake.nix` and `flake.lock` in the project, `~/.zandy` and the keychain
+5. zandy's own denies: `flake.nix`, `flake.lock` and `zandy.toml` in the project, `~/.zandy` and the keychain
 
 For the same operation, a later rule wins. A rule for a specific operation, like `file-write-data`, wins over a wildcard, like `file-write*`, wherever it stands. So a deny on `file-write*` alone doesn't hold. zandy denies its own paths for `file-write*` and every specific write operation, so neither a preset nor `filesystem` can open them.
 
@@ -98,7 +98,7 @@ A gateway that isn't Caddy is an attrset with `name`, an `argv` in which `{port}
 
 ## Adapters
 
-An adapter is a function from `pkgs` to an attrset, with the same fields as [in TOML](README.md#your-own-adapter) plus `secrets` and `files`, for a tool without a login of its own:
+An adapter is a function from `pkgs` to an attrset, with the same fields as [in TOML](zandy.toml.md) plus `secrets` and `files`, for a tool without a login of its own:
 
 ```nix
 say = pkgs: {

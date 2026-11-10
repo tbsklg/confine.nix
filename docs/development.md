@@ -16,4 +16,6 @@ nix run --override-input zandy path:$HOME/code/zandy ~/sandboxes
 
 Use `path:`, not a plain path: a plain path is read as a git repo and leaves out untracked files.
 
+A change ships with its docs, in the same commit: the reference page of what it changes, and an entry in [upgrade.md](upgrade.md) if users have to act. Reference pages keep the same sections, in this order: synopsis, description, environment, files, exit status, examples, see also, caveats; leave out what doesn't apply.
+
 `docs/options.md` is generated with `nix build .#options-doc`. The launch sequence is in [runtime-flow.puml](runtime-flow.puml). Planned work is in [TODO.md](https://github.com/tbsklg/zandy.nix/blob/main/TODO.md).
