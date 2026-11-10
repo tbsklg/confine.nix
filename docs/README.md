@@ -131,6 +131,7 @@ allowRead = ["~/notes"]
 | `[gateway.<name>]` | The [model backend](#model-backends), at most one. The table holds its arguments |
 | `[adapters.<name>]` | Tools the broker runs outside the sandbox for the agent, any number. The table holds their arguments |
 | `[filesystem]` | Extra paths the agent may read or write, or may not: `allowRead`, `denyRead`, `allowWrite`, `denyWrite` |
+| `[define.adapters.<name>]` | [Your own adapter](#write-your-own-adapter) |
 
 The names and their arguments come from the catalog, `ports.catalog` in the template. Each port's README in [zandy-ports](https://github.com/tbsklg/zandy-ports) says what it needs. A mistake fails at build time and names the key, e.g. `zandy.toml: gateway.bedrock: missing region`.
 
@@ -316,9 +317,37 @@ The broker runs the command outside the sandbox. zandy doesn't judge what the co
 
 ## Write your own adapter
 
-An adapter is a function that takes `pkgs` and returns an attrset. Define it in `flake.nix` and add it to `adapters` in [Nix](#in-nix), or give it a [catalog](#the-catalog) entry to use it from `zandy.toml`.
+Define it in `zandy.toml`. Defining it enables it. This one lets the agent list and read GitLab issues, and nothing else:
 
-This one lets the agent use macOS text-to-speech, which the sandbox can't reach:
+```toml
+[define.adapters.issues]
+package = "glab"
+setEnv.GITLAB_HOST = "gitlab.example.com"
+
+[[define.adapters.issues.capabilities]]
+name = "list"
+description = "List open issues of a project"
+params = [{ name = "repo", description = "group/name" }]
+argv = ["issue", "list", "--repo", "{repo}"]
+
+[[define.adapters.issues.capabilities]]
+name = "view"
+description = "Show one issue"
+params = [{ name = "repo", description = "group/name" }, { name = "id", description = "Issue number" }]
+argv = ["issue", "view", "{id}", "--repo", "{repo}"]
+```
+
+The agent then calls:
+
+```sh
+zandy-client call issues.list '{"repo":"group/name"}'
+```
+
+The fields are the ones [below](#fields), with `package` as a nixpkgs attribute. `binary` defaults to the package's main program. Params are `string` or `choice`; a `list` is refused, since it passes anything to the tool, which could then print its credential. `secrets` and `files` need Nix.
+
+### In Nix
+
+An adapter is a function that takes `pkgs` and returns an attrset. Add it to `adapters` in [Nix](#in-nix), or give it a [catalog](#the-catalog) entry to use it by name from `zandy.toml`. This one lets the agent use macOS text-to-speech, which the sandbox can't reach:
 
 ```nix
 let
@@ -345,7 +374,7 @@ zandy.lib.mkSandboxEnv {
 }
 ```
 
-The agent then calls:
+The agent calls it as:
 
 ```sh
 zandy-client call mac.say '{"voice":"Bad News","text":"the tests failed"}'
@@ -398,6 +427,8 @@ Whatever the command can do, the agent can do too. Prefer narrow methods with `s
 nix develop -c zig build test   # while working on zandy
 nix flake check                 # the same tests, built and run by Nix
 ```
+
+`zandy.toml` is read in two layers. [nix/resolve.nix](../nix/resolve.nix) is pure: it takes the parsed TOML and the catalog and decides everything, and [nix/resolve-test.nix](../nix/resolve-test.nix) tests it without files, nixpkgs or a build. [nix/config.nix](../nix/config.nix) is the shell: it reads the file, imports nixpkgs and calls `mkSandboxEnv`.
 
 To try a local checkout of zandy in your env, override its `zandy` input:
 

@@ -7,3 +7,12 @@ greeting = "moin"
 
 [filesystem]
 allowRead = ["~/notes"]
+
+[define.adapters.greet]
+package = "hello"
+
+[[define.adapters.greet.capabilities]]
+name = "as"
+description = "Greet with a greeting"
+params = [{ name = "greeting", kind = "string", description = "The greeting" }]
+argv = ["--greeting", "{greeting}"]

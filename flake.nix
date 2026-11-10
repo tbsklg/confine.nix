@@ -9,10 +9,7 @@
       system = "aarch64-darwin";
       pkgs = import nixpkgs { inherit system; };
       inherit (lib.zandyFor pkgs) zig zandy zandy-client tests;
-      config = {
-        fromConfig = import ./nix/config.nix { inherit nixpkgs; inherit (lib) mkSandboxEnv; };
-        schemaFor = import ./nix/schema.nix { inherit nixpkgs; };
-      };
+      config = import ./nix/config.nix { inherit nixpkgs; inherit (lib) mkSandboxEnv; };
     in
     {
       lib = {
@@ -35,7 +32,13 @@
         }).optionsCommonMark;
       };
 
-      checks.${system} = { inherit tests; } // import ./nix/config-test.nix { inherit (config) fromConfig schemaFor; inherit system; };
+      checks.${system} = { inherit tests; }
+        // import ./nix/config-test.nix { inherit (config) fromConfig schemaFor; inherit system; }
+        // {
+          resolve-test =
+            let failed = import ./nix/resolve-test.nix pkgs.lib;
+            in pkgs.runCommand "resolve-test" { } (if failed == [ ] then "touch $out" else "printf 'FAIL %s\\n' ${pkgs.lib.escapeShellArgs failed} >&2; exit 1");
+        };
 
       devShells.${system}.default = pkgs.mkShell {
         packages = [ zig ];
