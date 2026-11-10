@@ -1,0 +1,6 @@
+#:schema ./zandy.schema.json
+
+name = "claude"
+preset = "claude"
+
+[gateway.anthropicOauth]

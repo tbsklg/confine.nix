@@ -1,0 +1,9 @@
+name = "config-test"
+preset = "shell"
+packages = ["coreutils", "python3Packages.pytest"]
+
+[adapters.hello]
+greeting = "moin"
+
+[filesystem]
+allowRead = ["~/notes"]

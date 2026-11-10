@@ -9,16 +9,21 @@
       system = "aarch64-darwin";
       pkgs = import nixpkgs { inherit system; };
       inherit (lib.zandyFor pkgs) zig zandy zandy-client tests;
+      config = {
+        fromConfig = import ./nix/config.nix { inherit nixpkgs; inherit (lib) mkSandboxEnv; };
+        schemaFor = import ./nix/schema.nix { inherit nixpkgs; };
+      };
     in
     {
       lib = {
         inherit (lib) mkSandboxEnv;
+        inherit (config) fromConfig schemaFor;
         mkGateway = import ./nix/gateway.nix;
       };
 
       templates.default = {
         path = ./templates/default;
-        description = "A zandy sandbox env with zandy-ports plugged in: run with `nix run`, install with `nix profile add`";
+        description = "A zandy env configured in zandy.toml, with zandy-ports plugged in";
       };
 
       packages.${system} = {
@@ -30,7 +35,7 @@
         }).optionsCommonMark;
       };
 
-      checks.${system} = { inherit tests; };
+      checks.${system} = { inherit tests; } // import ./nix/config-test.nix { inherit (config) fromConfig schemaFor; inherit system; };
 
       devShells.${system}.default = pkgs.mkShell {
         packages = [ zig ];

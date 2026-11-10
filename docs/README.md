@@ -17,7 +17,7 @@
 ## Architecture
 
 ```
-flake.nix
+zandy.toml + flake.nix
    │ nix build
    ▼
 env, bin/zandy-<name>
@@ -35,7 +35,7 @@ zandy ── starts gateway and broker, then sandbox_init + exec
 └──────────────────────────────┘
 ```
 
-zandy is the base: the launcher, the broker, `mkSandboxEnv` and `mkGateway`. Presets for programs like Claude Code and opencode and gateways for model backends live in [zandy-ports](https://github.com/tbsklg/zandy-ports) and are updated on their own.
+zandy is the base: the launcher, the broker, the `zandy.toml` format, `mkSandboxEnv` and `mkGateway`. Presets for programs like Claude Code and opencode, gateways for model backends and adapters live in [zandy-ports](https://github.com/tbsklg/zandy-ports) and are updated on their own.
 
 Nix builds the env and the launcher. zandy reads the env, starts the gateway and the broker, and runs the program under a Seatbelt profile. Credentials stay outside: the gateway adds the model key, and the broker runs your tools with their own logins. The sequence of a launch is in [runtime-flow.puml](runtime-flow.puml).
 
@@ -50,21 +50,24 @@ sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install)
 mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
 
-Create your env from the template:
+Create your env from the template, in its own directory outside your projects:
 
 ```sh
 mkdir ~/sandboxes && cd ~/sandboxes
 nix flake init -t github:tbsklg/zandy.nix
 ```
 
-The template has two inputs: `zandy`, the base, and `ports`, [zandy-ports](https://github.com/tbsklg/zandy-ports) with its presets and gateways. `ports` follows your `zandy`, so both use the same base. Drop `ports` if you write your own preset and gateway.
+You get a `flake.nix`, which you leave as it is, and a `zandy.toml`, which you edit. The flake has two inputs: `zandy`, the base, and `ports`, [zandy-ports](https://github.com/tbsklg/zandy-ports) with its presets, gateways and adapters. `ports` follows your `zandy`, so both use the same base.
 
-Edit `flake.nix`: pick a [model backend](#model-backends) and add any adapters you need. Then install it:
+Pick a [model backend](#model-backends) and add any adapters you need in `zandy.toml`, then install it:
 
 ```sh
 git init && git add -A            # flakes only see files git tracks
+nix build .#schema -o zandy.schema.json
 nix profile add ~/sandboxes       # older Nix: nix profile install
 ```
+
+The schema gives completion and checks in editors that read the `#:schema` line. It is built from your pinned zandy and ports, so it lists exactly the ports you can use. Rebuild it after `nix flake update`.
 
 Before the first run you need:
 
@@ -80,19 +83,19 @@ zandy-claude
 
 To see the env's config, the broker methods and the Seatbelt profile without starting the agent, run `zandy-claude --zandy-config`.
 
-After changing `flake.nix`, review the change, then upgrade. Until then, `zandy-claude` keeps running the sandbox you installed:
+After changing `zandy.toml`, review the change, then upgrade. Until then, `zandy-claude` keeps running the sandbox you installed:
 
 ```sh
-git diff && git add -A && nix flake update && nix profile upgrade --all
+git diff && nix profile upgrade --all
 ```
 
-Use `nix run ~/sandboxes` only to try out a flake you're editing. It builds the sandbox from the flake as it is right now, on every start.
+Use `nix run ~/sandboxes` only to try out a config you're editing. It builds the sandbox as it is right now, on every start.
 
 ## Per project
 
 If a project needs its own toolchain, give it its own env and add the tools to `packages`.
 
-Keep that flake in its own directory outside the project. Then it doesn't have to be committed, and the agent can't edit it. Give it its own `name`, install it, and start it from the project root:
+Keep that env in its own directory outside the project, from the same template. Then it doesn't have to be committed, and the agent can't edit it. Give it its own `name`, install it, and start it from the project root:
 
 ```sh
 nix profile add ~/sandboxes/your-project
@@ -102,11 +105,58 @@ zandy-your-project
 
 ## Configuration
 
+```toml
+#:schema ./zandy.schema.json
+
+name = "claude"
+preset = "claude"
+packages = ["ripgrep", "python3Packages.pytest"]
+
+[gateway.bedrock]
+profile = "acme-bedrock"
+region = "eu-west-1"
+
+[adapters.gitlab]
+host = "gitlab.example.com"
+
+[filesystem]
+allowRead = ["~/notes"]
+```
+
+| Key | What it sets |
+|---|---|
+| `name` | The env's name. The launcher is called `zandy-<name>` |
+| `preset` | The program to run and the sandbox rules it needs, by name from the catalog, e.g. `claude` |
+| `packages` | Extra programs the agent may run, by nixpkgs attribute |
+| `[gateway.<name>]` | The [model backend](#model-backends), at most one. The table holds its arguments |
+| `[adapters.<name>]` | Tools the broker runs outside the sandbox for the agent, any number. The table holds their arguments |
+| `[filesystem]` | Extra paths the agent may read or write, or may not: `allowRead`, `denyRead`, `allowWrite`, `denyWrite` |
+
+The names and their arguments come from the catalog, `ports.catalog` in the template. Each port's README in [zandy-ports](https://github.com/tbsklg/zandy-ports) says what it needs. A mistake fails at build time and names the key, e.g. `zandy.toml: gateway.bedrock: missing region`.
+
+### The catalog
+
+`zandy.lib.fromConfig { system, catalog, config }` resolves the names in `zandy.toml` against `catalog`, an attrset with `presets`, `gateways` and `adapters`. Each entry is plain data plus one function:
+
+| Field | Meaning |
+|---|---|
+| `description` | One line, shown in completion |
+| `args` | The table's keys: `{ <name> = { type = "string" or "list"; description; default or example; }; }` |
+| `call` | Takes the table, fills in the defaults, and returns a preset, or what `gateway` or `adapters` take |
+| `open` | `true` if the port can leak its credential, shown in the schema |
+| `unfree` | Unfree package names the port needs, e.g. `[ "claude-code" ]` |
+
+To add ports of your own next to zandy-ports, merge them into the catalog in `flake.nix`: `catalog = ports.catalog // { adapters = ports.catalog.adapters // { mine = …; }; };`. `zandy.lib.schemaFor { system, catalog }` builds the schema from the same catalog.
+
+### In Nix
+
+For what `zandy.toml` doesn't cover, call `mkSandboxEnv` in `flake.nix` directly:
+
 ```nix
 zandy.lib.mkSandboxEnv {
   inherit pkgs;
   name = "claude";
-  preset = ports.presets.claude;
+  preset = ports.presets.claude // { rules = ports.rules.project ++ ports.presets.claude.rules; };
   packages = [ pkgs.ripgrep ];
   gateway = ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
   adapters = [ say ];
@@ -114,16 +164,7 @@ zandy.lib.mkSandboxEnv {
 }
 ```
 
-| Option | What it sets |
-|---|---|
-| `name` | The env's name. The launcher is called `zandy-<name>` |
-| `preset` | The program to run and the sandbox rules it needs: one from [zandy-ports](https://github.com/tbsklg/zandy-ports), e.g. `ports.presets.claude`, or [your own](#your-own-preset) |
-| `packages` | Extra programs the agent may run |
-| `gateway` | The [model backend](#model-backends) |
-| `adapters` | Tools the broker runs outside the sandbox for the agent, e.g. [your own](#write-your-own-adapter) |
-| `filesystem` | Extra paths the agent may read or write, or may not |
-
-A mistyped or unknown option fails at build time. For all options with their types and defaults, see [options.md](options.md). It is generated with `nix build .#options-doc`.
+`pkgs` needs `claude-code` allowed as unfree. A mistyped or unknown option fails at build time. For all options with their types and defaults, see [options.md](options.md). It is generated with `nix build .#options-doc`.
 
 ## Your own preset
 
@@ -190,7 +231,7 @@ The sandbox denies everything that no rule allows. zandy adds rules in this orde
 1. zandy's own allows: the broker socket
 2. the preset's `rules`
 3. read and execute for the env's store paths
-4. `filesystem` from your flake
+4. `filesystem` from your config
 5. zandy's own denies: `flake.nix` and `flake.lock` in the project, `~/.zandy` and the keychain
 
 For the same operation, a later rule wins. A rule for a more specific operation, like `file-write-data`, wins over one for a wildcard, like `file-write*`, wherever it stands, before or after it. So a deny on `file-write*` alone doesn't hold: a preset's `allow file-write-data` opens it again, and so does a later `allowWrite`. zandy denies its own paths for `file-write*` and for every specific write operation, and a test checks that, so neither a preset nor `filesystem` can open them.
@@ -203,7 +244,7 @@ The agent reaches its model through a gateway. That's a local proxy that zandy s
 
 You pick one gateway per env. Without one, the agent reaches no model through zandy.
 
-Gateways for Bedrock, the Anthropic API, a Claude subscription and OpenAI are in [zandy-ports](https://github.com/tbsklg/zandy-ports#model-backends), e.g. `gateway = ports.gateways.anthropicOauth { };`.
+Gateways for Bedrock, the Anthropic API, a Claude subscription and OpenAI are in [zandy-ports](https://github.com/tbsklg/zandy-ports), e.g. `[gateway.anthropicOauth]` in `zandy.toml`.
 
 ### Your own gateway
 
@@ -275,7 +316,7 @@ The broker runs the command outside the sandbox. zandy doesn't judge what the co
 
 ## Write your own adapter
 
-An adapter is a function that takes `pkgs` and returns an attrset. Define it in your flake and add it to `adapters`.
+An adapter is a function that takes `pkgs` and returns an attrset. Define it in `flake.nix` and add it to `adapters` in [Nix](#in-nix), or give it a [catalog](#the-catalog) entry to use it from `zandy.toml`.
 
 This one lets the agent use macOS text-to-speech, which the sandbox can't reach:
 
@@ -335,7 +376,7 @@ Whatever the command can do, the agent can do too. Prefer narrow methods with `s
 
 ## Security limits
 
-- **The sandbox is only as safe as its flake.** zandy runs the env from the Nix store, which the agent can't change. But the flake it was built from can, if the agent can write to it: an edited preset or rule takes effect at the next build. zandy can't check this, because the built env doesn't know where its flake lives. So keep the flake outside every directory the agent can write to: not in the project, not in `allowWrite`. Run the installed `zandy-<name>`, and review changes to the flake before `nix profile upgrade`. zandy denies writes to `flake.nix` and `flake.lock` in the project, but that doesn't cover the files a flake imports.
+- **The sandbox is only as safe as its config.** zandy runs the env from the Nix store, which the agent can't change. But the `zandy.toml` and `flake.nix` it was built from can, if the agent can write to them: an added adapter or path takes effect at the next build. zandy can't check this, because the built env doesn't know where its config lives. So keep the env's directory outside every directory the agent can write to: not in the project, not in `allowWrite`. Run the installed `zandy-<name>`, and review changes before `nix profile upgrade`. zandy denies writes to `flake.nix` and `flake.lock` in the project, but that doesn't cover the files a flake imports.
 - **Environment variables are readable.** On macOS, any process can read the environment and arguments of every other process run by the same user. Seatbelt can't block that. So don't export secrets in the shell that starts zandy. Store them with `--zandy-secret` instead.
 - **Tools can print their own credentials.** A `list` param that passes its items to glab lets the agent run `glab config get token`, and to aws `aws configure export-credentials`. Narrow methods with `string` and `choice` params avoid this.
 - **Tools keep their credentials in your home.** glab keeps its token in `~/.config/glab-cli/config.yml`, aws in `~/.aws`. The sandbox can't read them. Keep it that way: an `allowRead` for `~` or `~/.config` hands them to the agent, and then it can bypass the broker.
