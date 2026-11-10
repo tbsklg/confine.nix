@@ -3,11 +3,11 @@ let
   inherit (nixpkgs) lib;
 in
 {
-  fromConfig = { system, catalog, config }:
+  fromConfig = { system, catalog, config, overlays ? [ ] }:
     let
       resolved = import ./resolve.nix lib { inherit catalog; toml = builtins.fromTOML (builtins.readFile config); };
       pkgs = import nixpkgs {
-        inherit system;
+        inherit system overlays;
         config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) resolved.unfree;
       };
     in

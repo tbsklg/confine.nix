@@ -40,7 +40,7 @@ Presets, gateways and adapters are named from the catalog, `ports.catalog` from 
 
 - `name` (required): The env's name, `[a-z0-9-]+`. The launcher is `zandy-<name>`.
 - `preset` (required): The program to run, with the sandbox rules it needs, e.g. `claude`, `opencode` or `shell`. With the presets from zandy-ports, the program can read the whole project and write it, except dot paths at any depth.
-- `packages`: Extra programs the program may run, by nixpkgs attribute, e.g. `ripgrep` or `python3Packages.pytest`.
+- `packages`: Extra programs the program may run, by nixpkgs attribute, e.g. `ripgrep` or `python3Packages.pytest`. A package that isn't in nixpkgs is added with an overlay in `flake.nix`; see [your own packages](nix.md#your-own-packages).
 - `[gateway.<gateway>]`: A proxy that adds an API's credential outside the sandbox, at most one, e.g. `anthropicOauth`, `anthropic`, `bedrock` or `openai`.
 - `[adapters.<adapter>]`: A tool the broker runs outside the sandbox, with your login, e.g. `gitlab` or `aws`. Any number.
 - `[define.adapters.<name>]`: An adapter of your own. Defining it enables it; `<name>` must not also be in `[adapters]`.

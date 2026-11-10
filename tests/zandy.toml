@@ -1,6 +1,6 @@
 name = "config-test"
 preset = "shell"
-packages = ["coreutils", "python3Packages.pytest"]
+packages = ["coreutils", "python3Packages.pytest", "greet"]
 
 [adapters.hello]
 greeting = "moin"
@@ -16,3 +16,12 @@ name = "as"
 description = "Greet with a greeting"
 params = [{ name = "greeting", kind = "string", description = "The greeting" }]
 argv = ["--greeting", "{greeting}"]
+
+[define.adapters.echo]
+package = "shout"
+
+[[define.adapters.echo.capabilities]]
+name = "say"
+description = "Echo a text"
+params = [{ name = "text", description = "The text" }]
+argv = ["{text}"]

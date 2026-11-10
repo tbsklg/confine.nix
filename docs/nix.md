@@ -2,12 +2,43 @@
 
 `zandy.toml` covers picking ports. For a preset, gateway or adapter of your own, or one that needs secrets, use Nix in your env's `flake.nix`.
 
+- [Your own packages](#your-own-packages)
 - [mkSandboxEnv](#mksandboxenv)
 - [Presets](#presets)
 - [Rules](#rules)
 - [Gateways](#gateways)
 - [Adapters](#adapters)
 - [Catalogs](#catalogs)
+
+## Your own packages
+
+`zandy.toml` names packages; it doesn't build them. To use one that isn't in nixpkgs, add it with an overlay in `flake.nix`, and name it in `packages` or as an adapter's `package`:
+
+```nix
+default = zandy.lib.fromConfig {
+  inherit system catalog;
+  config = ./zandy.toml;
+  overlays = [
+    (final: prev: {
+      say = prev.writeShellScriptBin "say" ''exec /usr/bin/say -v "$1" "$2"'';
+    })
+  ];
+};
+```
+
+```toml
+[define.adapters.mac]
+package = "say"
+
+[[define.adapters.mac.capabilities]]
+name = "say"
+description = "Speak a text out loud on the user's Mac"
+params = [
+  { name = "voice", kind = "choice", choices = ["Bad News", "Good News"], description = "Voice" },
+  { name = "text", description = "Text to speak" },
+]
+argv = ["{voice}", "{text}"]
+```
 
 ## mkSandboxEnv
 
