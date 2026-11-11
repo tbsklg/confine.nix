@@ -13,7 +13,7 @@ This reduces what the program can reach, but it is not a complete isolation boun
 This sets up Claude Code as the program. You need [Nix](https://nixos.org/download) with flakes, and a Claude login: run `claude` once outside confine and log in.
 
 ```sh
-mkdir -p ~/.confine/envs/claude && cd ~/.confine/envs/claude
+mkdir -p ~/.confine/envs/dev && cd ~/.confine/envs/dev
 nix flake init -t github:tbsklg/confine.nix
 nix profile add .
 ```
@@ -21,21 +21,21 @@ nix profile add .
 Then, in a project:
 
 ```sh
-confine-claude claude
+confine-dev claude
 ```
 
-The env is configured in `~/.confine/envs/claude/confine.toml`, where the sandbox can't read or change it:
+The env is configured in `~/.confine/envs/dev/confine.toml`, where the sandbox can't read or change it:
 
 ```toml
 #:schema ./confine.schema.json
 
-name = "claude"
+name = "dev"
 preset = "claude"
 
 [gateway.anthropicOauth]
 ```
 
-After editing it, run `nix profile upgrade --all`. Until then, `confine-claude` keeps using the sandbox you installed.
+After editing it, run `nix profile upgrade --all`. Until then, `confine-dev` keeps using the sandbox you installed.
 
 ## Documentation
 

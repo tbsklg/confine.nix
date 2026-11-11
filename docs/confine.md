@@ -35,16 +35,16 @@ Everything no rule allows is denied.
 
 ## Exit status
 
-The program's exit status, or 128 plus the signal that ended it. 1 if confine itself fails.
+The program's exit status, or 128 plus the signal that ended it. 127 if the command can't be run, 1 if confine itself fails.
 
 ## Examples
 
 ```sh
 cd your-project
-confine-claude
-confine-claude claude
-confine-claude claude -p "run the tests"
-confine-claude --confine-secret anthropic-api-key
+confine-dev                          # a shell
+confine-dev claude
+confine-dev claude -p "run the tests"
+confine-dev --confine-secret anthropic-api-key
 ```
 
 ## See also

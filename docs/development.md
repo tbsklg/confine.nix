@@ -13,10 +13,10 @@ To try a local checkout in your env, override its `confine` input:
 
 ```sh
 cd your-project
-nix run --override-input confine path:$HOME/code/confine ~/.confine/envs/claude
+nix run --override-input confine path:$HOME/code/confine ~/.confine/envs/dev
 ```
 
-Use `path:`, not a plain path: a plain path is read as a git repo and leaves out untracked files.
+Use `path:`, not a plain path: a plain path is read as a git repo and leaves out untracked files. `path:` copies the whole directory into the store, so delete `.zig-cache` first.
 
 A change ships with its docs, in the same commit: the reference page of what it changes, and an entry in [upgrade.md](upgrade.md) if users have to act. Reference pages keep the same sections, in this order: synopsis, description, environment, files, exit status, examples, see also, caveats; leave out what doesn't apply.
 

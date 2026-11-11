@@ -98,6 +98,6 @@ Behavior that changed:
 
 - **Dot paths in the project are read-only,** at any depth: `.git`, `.envrc`, `.vscode` and the like. Before, only `.claude/` and `.mcp.json` were. To let the program write one, add it to `[filesystem] allowWrite`.
 - **`zandy.toml` in the project is write-protected,** like `flake.nix` and `flake.lock`.
-- **The gitlab and aws adapters are open,** as before. A narrow adapter of your own can be defined in `zandy.toml`; see [zandy.toml](zandy.toml.md).
+- **The gitlab and aws adapters are open,** as before. A narrow adapter of your own can be defined in `zandy.toml`; see [zandy.toml](confine.toml.md).
 
 If you need more than the TOML offers, keep using `mkSandboxEnv` in `flake.nix`, with `ports.presets`, `ports.gateways` and `ports.adapters` instead of `zandy.presets` and so on. See [zandy in Nix](nix.md).

@@ -19,7 +19,7 @@ participant "confine-client" as Client
 participant "adapter binary\n/nix/store/…" as Tool
 participant "gateway proxy\ncaddy / aws-sigv4-proxy" as Gateway
 
-User -> Launcher : confine-claude [command [args]]  (or nix run)
+User -> Launcher : confine-dev [command [args]]  (or nix run)
 Launcher -> Main : exec confine --env <env> [args]
 Main -> Cli : parseArgs(argv)
 Cli --> Main : Launch (env, args)

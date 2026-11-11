@@ -69,7 +69,7 @@ An unknown key, name or argument fails the build and names it.
 Claude Code with your Claude login:
 
 ```toml
-name = "claude"
+name = "dev"
 preset = "claude"
 
 [gateway.anthropicOauth]

@@ -47,7 +47,7 @@ argv = ["{voice}", "{text}"]
 ```nix
 packages.aarch64-darwin.default = confine.lib.mkSandboxEnv {
   inherit pkgs;
-  name = "claude";
+  name = "dev";
   preset = ports.presets.claude // { rules = ports.rules.project ++ ports.presets.claude.rules; };
   packages = [ pkgs.ripgrep ];
   gateway = ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; };
@@ -82,7 +82,7 @@ packages.aarch64-darwin.curl = confine.lib.mkSandboxEnv {
 ```
 
 ```sh
-nix run ~/.confine/envs/claude#curl -- curl https://example.com
+nix run ~/.confine/envs/dev#curl -- curl https://example.com
 ```
 
 To start from an existing preset, override it: `ports.presets.claude // { name = "mine"; }` gives Claude Code's rules to adjust. Start with few rules and add what the [debug log](logging.md) shows as denied.

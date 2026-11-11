@@ -1,6 +1,6 @@
 #:schema ./confine.schema.json
 
-name = "claude"
+name = "dev"
 preset = "claude"
 
 [gateway.anthropicOauth]

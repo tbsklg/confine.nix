@@ -15,13 +15,13 @@ Reference: [confine.toml](confine.toml.md), [confine](confine.md), [confine-clie
 ~/.confine/envs/<name>/confine.toml
    │ nix profile add
    ▼
-confine-<name> ── starts gateway and broker, then the program
+confine-<name> ── starts gateway and broker, then the command
    │
    ▼
 ┌─ Seatbelt sandbox ───────────┐       outside, with your credentials
 │                              │
 │  program                     │── HTTP, no key ──▶ gateway ── adds key ──▶ API
-│  confine-client                │── JSON-RPC ──────▶ broker ─── runs ──────▶ glab, aws
+│  confine-client              │── JSON-RPC ──────▶ broker ─── runs ──────▶ glab, aws
 │  project directory           │
 │                              │
 └──────────────────────────────┘
@@ -39,7 +39,7 @@ mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" >> ~
 Create the env in `~/.confine/envs/<name>/` and install it:
 
 ```sh
-mkdir -p ~/.confine/envs/claude && cd ~/.confine/envs/claude
+mkdir -p ~/.confine/envs/dev && cd ~/.confine/envs/dev
 nix flake init -t github:tbsklg/confine.nix
 nix build .#schema -o confine.schema.json
 nix profile add .                  # older Nix: nix profile install
@@ -51,10 +51,10 @@ Run it from a project:
 
 ```sh
 cd your-project
-confine-claude claude
+confine-dev claude
 ```
 
-Without a command, `confine-claude` opens a shell in the sandbox. The template sets up Claude Code. For any other command, use the `shell` preset with what the command needs in `packages`, and run e.g. `confine-shell make test`. See [confine.toml](confine.toml.md#examples).
+Without a command, `confine-dev` opens a shell in the sandbox. The template sets up Claude Code. For any other command, use the `shell` preset with what the command needs in `packages`, and run e.g. `confine-shell make test`. See [confine.toml](confine.toml.md#examples).
 
 ## Reach an API
 
@@ -74,7 +74,7 @@ To store a key, create confine's keychain once, then store it; confine asks for 
 ```sh
 security create-keychain ~/.confine/confine.keychain-db
 security set-keychain-settings ~/.confine/confine.keychain-db
-confine-claude --confine-secret anthropic-api-key
+confine-dev --confine-secret anthropic-api-key
 ```
 
 ## Give the program a tool
@@ -128,7 +128,7 @@ allowRead = ["~/notes"]
 After editing `confine.toml`, upgrade. Until then, the installed env runs unchanged:
 
 ```sh
-cd ~/.confine/envs/claude && nix profile upgrade --all
+cd ~/.confine/envs/dev && nix profile upgrade --all
 ```
 
 To pull the latest confine and ports, then check the [upgrade notes](upgrade.md):
@@ -137,7 +137,7 @@ To pull the latest confine and ports, then check the [upgrade notes](upgrade.md)
 nix flake update && nix build .#schema -o confine.schema.json && nix profile upgrade --all
 ```
 
-`nix run ~/.confine/envs/claude` builds and runs the env as it is right now, without installing. Use it only to try out a change.
+`nix run ~/.confine/envs/dev` builds and runs the env as it is right now, without installing. Use it only to try out a change.
 
 ## One env per project
 
@@ -148,7 +148,7 @@ mkdir -p ~/.confine/envs/your-project && cd ~/.confine/envs/your-project
 nix flake init -t github:tbsklg/confine.nix
 # set name = "your-project" and packages in confine.toml
 nix profile add .
-cd ~/code/your-project && confine-your-project
+cd ~/code/your-project && confine-your-project claude
 ```
 
 ## Security limits
