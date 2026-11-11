@@ -157,6 +157,8 @@ cd ~/code/your-project && zandy-your-project
 - **Environment variables are readable.** On macOS, any process can read the environment and arguments of every other process of the same user. Don't export secrets in the shell that starts zandy; use `--zandy-secret`.
 - **Open adapters can print their credential:** `glab config get token`, `aws configure export-credentials`. Narrow adapters can't.
 - **Tools keep credentials in your home:** glab in `~/.config/glab-cli`, aws in `~/.aws`. The sandbox can't read them; an `allowRead` for `~` or `~/.config` would hand them to the program.
+- **Tools run in the project directory.** The program can write there, and a tool outside the sandbox may read config from it: e.g. a planted git repo with `core.fsmonitor` runs a command as you when an adapter calls `git`.
+- **The program shares your terminal.** zandy doesn't start it in a separate session, so a preset that allows `file-ioctl` may let it type into your shell.
 
 ## Troubleshooting
 
