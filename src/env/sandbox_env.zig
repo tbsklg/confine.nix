@@ -45,7 +45,7 @@ const test_paths =
 
 fn testManifest(comptime binary: []const u8) []const u8 {
     return
-    \\{"preset":{"name":"claude","binary":"claude","profile":{}},
+    \\{"shell":"/bin/sh","preset":{"name":"claude","profile":{}},
     \\ "adapters":[{"name":"gitlab","binary":"
     ++ binary ++
         \\","capabilities":[]}]}

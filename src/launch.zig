@@ -28,6 +28,11 @@ pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []cons
     const tag = try std.fmt.allocPrint(arena, "zandy-{d}", .{session});
     log.info("session {d}: env {s}, preset {s}, cwd {s}", .{ session, sandbox_env.root.path, preset.name, env.cwd });
 
+    const command = resolveCommand(arena, sandbox_env.bin, manifest.shell, user_args) catch |err| {
+        log.err("command '{s}' is not a program of the env", .{user_args[0]});
+        return err;
+    };
+
     var dir_buf: [std.fs.max_name_bytes]u8 = undefined;
     const dir_path = try broker.sessionDirPath(&dir_buf, env.home, session);
     try broker.createSocketDir(io, dir_path);
@@ -44,14 +49,12 @@ pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []cons
     const ticket = broker.newTicket(io);
 
     const profile_z = try finalProfile(arena, profile, running, tag);
-    const path = try std.fs.path.joinZ(arena, &.{ sandbox_env.bin, preset.binary });
-    const argv = try buildArgv(arena, preset, user_args);
-    const envp = try sandboxEnviron(arena, environ, preset, sandbox_env.bin, sock_path, &ticket, running);
+    const envp = try sandboxEnviron(arena, environ, preset, sandbox_env.bin, manifest.shell, sock_path, &ticket, running);
     const parameters = profileParameters(env, sock_path);
 
     const ctx: rpc.Context = .{ .ticket = &ticket, .registry = .{ .capabilities = try registry.parseAdapters(arena, manifest.adapters, adapter_pipes, dir_path) }, .environ = environ };
 
-    const pid = try spawnSandboxed(profile_z, &parameters, path, argv, envp);
+    const pid = try spawnSandboxed(profile_z, &parameters, command.path, command.argv, envp);
 
     const thread = try std.Thread.spawn(.{}, broker.serveLoop, .{ io, init.gpa, &server, &ctx });
     thread.detach();
@@ -147,21 +150,60 @@ fn finalProfile(arena: std.mem.Allocator, profile: sbpl.Profile, running: ?gatew
     return arena.dupeZ(u8, aw.written());
 }
 
-fn buildArgv(arena: std.mem.Allocator, preset: Preset, user_args: []const [:0]const u8) !Argv {
-    const extra_args = try std.mem.concat(arena, [:0]const u8, &.{ preset.args, user_args });
-    const argv = try arena.allocSentinel(?[*:0]const u8, 1 + extra_args.len, null);
-    argv[0] = preset.binary.ptr;
-    for (extra_args, argv[1..]) |arg, *slot| slot.* = arg.ptr;
+const Command = struct {
+    path: [:0]const u8,
+    argv: Argv,
+};
+
+fn resolveCommand(arena: std.mem.Allocator, bin_dir: []const u8, shell: [:0]const u8, user_args: []const [:0]const u8) !Command {
+    if (user_args.len == 0) return .{ .path = shell, .argv = try buildArgv(arena, &.{shell}) };
+    const name = user_args[0];
+    if (name.len == 0 or std.mem.indexOfScalar(u8, name, '/') != null) return error.CommandNotInEnv;
+    return .{ .path = try std.fs.path.joinZ(arena, &.{ bin_dir, name }), .argv = try buildArgv(arena, user_args) };
+}
+
+fn buildArgv(arena: std.mem.Allocator, args: []const [:0]const u8) !Argv {
+    const argv = try arena.allocSentinel(?[*:0]const u8, args.len, null);
+    for (args, argv) |arg, *slot| slot.* = arg.ptr;
     return argv;
 }
 
-fn sandboxEnviron(arena: std.mem.Allocator, environ: *const std.process.Environ.Map, preset: Preset, bin_dir: []const u8, sock_path: []const u8, ticket: []const u8, running: ?gateway.Running) !Argv {
+test "resolveCommand runs the shell without a command" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+
+    const command = try resolveCommand(arena_state.allocator(), "/env/sandbox/bin", "/nix/store/x-bash/bin/bash", &.{});
+
+    try std.testing.expectEqualStrings("/nix/store/x-bash/bin/bash", command.path);
+    try std.testing.expectEqual(1, command.argv.len);
+}
+
+test "resolveCommand runs the command from the env with its args" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+
+    const command = try resolveCommand(arena_state.allocator(), "/env/sandbox/bin", "/bin/sh", &.{ "claude", "-p", "hi" });
+
+    try std.testing.expectEqualStrings("/env/sandbox/bin/claude", command.path);
+    try std.testing.expectEqualStrings("claude", std.mem.span(command.argv[0].?));
+    try std.testing.expectEqualStrings("hi", std.mem.span(command.argv[2].?));
+}
+
+test "resolveCommand refuses a path or an empty name" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+
+    try std.testing.expectError(error.CommandNotInEnv, resolveCommand(arena_state.allocator(), "/env/sandbox/bin", "/bin/sh", &.{"../../bin/sh"}));
+    try std.testing.expectError(error.CommandNotInEnv, resolveCommand(arena_state.allocator(), "/env/sandbox/bin", "/bin/sh", &.{""}));
+}
+
+fn sandboxEnviron(arena: std.mem.Allocator, environ: *const std.process.Environ.Map, preset: Preset, bin_dir: []const u8, shell: []const u8, sock_path: []const u8, ticket: []const u8, running: ?gateway.Running) !Argv {
     var map = std.process.Environ.Map.init(arena);
     for (preset.env) |name| {
         if (environ.get(name)) |value| try map.put(name, value);
     }
     try map.put("PATH", bin_dir);
-    try map.put("SHELL", try std.fs.path.join(arena, &.{ bin_dir, "bash" }));
+    try map.put("SHELL", shell);
     try map.put("BROKER_SOCK", sock_path);
     try map.put("BROKER_TICKET", ticket);
     if (running) |r| for (try gateway.environFor(arena, preset.gatewayEnv, r)) |entry| try map.put(entry.name, entry.value);

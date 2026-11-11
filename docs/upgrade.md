@@ -2,6 +2,19 @@
 
 Changes that need you to act, newest first. After each, run `nix flake update && nix profile upgrade --all` in your env's directory.
 
+## 2026-11-10: envs live in ~/.zandy/envs
+
+An env's directory, with its `flake.nix` and `zandy.toml`, now belongs in `~/.zandy/envs/<name>/`. The sandbox can't read or write `~/.zandy`, so the program can't see or change its own config. Anywhere else, only `flake.nix`, `flake.lock` and `zandy.toml` in the project are protected.
+
+To move an env, e.g. from `~/sandboxes`:
+
+```sh
+mkdir -p ~/.zandy/envs
+mv ~/sandboxes ~/.zandy/envs/claude
+nix profile remove sandboxes                 # the old entry, as `nix profile list` names it
+nix profile add ~/.zandy/envs/claude
+```
+
 ## 2026-11-10: configuration in zandy.toml
 
 The env is configured in `zandy.toml`. `flake.nix` comes from the template and isn't edited. Presets, gateways and adapters moved to [zandy-ports](https://github.com/tbsklg/zandy-ports) and are named in the TOML.

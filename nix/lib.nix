@@ -28,11 +28,12 @@ let
         name = "${cfg.name}-bin";
         paths = sandboxPackages;
       };
-      closure = pkgs.closureInfo { rootPaths = [ bin ]; };
+      shell = "${pkgs.bashInteractive}/bin/bash";
+      closure = pkgs.closureInfo { rootPaths = [ bin pkgs.bashInteractive ]; };
 
       manifest = {
         preset = {
-          inherit (preset) name binary env args;
+          inherit (preset) name env;
           inherit gatewayEnv;
           profile.rules = preset.rules;
         };
@@ -48,6 +49,7 @@ let
           resolvedAdapters;
         gateway = if gateway == null then null else { inherit (gateway) name argv; env = gateway.env or { }; secrets = gateway.secrets or { }; files = gateway.files or { }; };
         inherit (cfg) filesystem;
+        inherit shell;
       };
 
       env = pkgs.linkFarm "${cfg.name}-env" [

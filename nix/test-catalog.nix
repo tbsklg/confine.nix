@@ -4,7 +4,6 @@
     args = { };
     call = _: {
       name = "shell";
-      binary = "bash";
       packages = pkgs: [ pkgs.bash ];
       rules = [ ];
     };

@@ -16,15 +16,13 @@ in
     };
 
     preset = mkOption {
-      description = "The app to run and the sandbox rules it needs, e.g. `ports.presets.claude` from zandy-ports.";
+      description = "The sandbox rules and packages an app needs, e.g. `ports.presets.claude` from zandy-ports.";
       type = types.submodule {
         options = {
           name = mkOption { type = types.str; description = "Name of the preset."; };
-          binary = mkOption { type = types.str; description = "Binary in `sandbox/bin` to execute."; };
           icon = mkOption { type = types.str; default = ""; description = "Symbol shown in the start banner."; };
           packages = mkOption { type = types.functionTo (types.listOf types.package); description = "Packages the app needs, given `pkgs`."; };
           env = mkOption { type = types.listOf types.str; default = [ ]; description = "Names of the environment variables passed into the sandbox."; };
-          args = mkOption { type = types.listOf types.str; default = [ ]; description = "Startup args."; };
           gatewayEnv = mkOption { type = types.attrsOf (types.either (types.attrsOf types.str) (types.functionTo (types.attrsOf types.str))); default = { }; description = "Env vars the app gets per gateway name, or a function of the gateway; `{url}` becomes the gateway's address."; };
           rules = mkOption { type = types.listOf types.attrs; description = "SBPL rules the app needs."; };
         };

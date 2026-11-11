@@ -192,7 +192,7 @@ string matching the pattern \[a-z0-9-]+
 
 
 
-The app to run and the sandbox rules it needs, e\.g\. ` ports.presets.claude ` from zandy-ports\.
+The sandbox rules and packages an app needs, e\.g\. ` ports.presets.claude ` from zandy-ports\.
 
 
 
@@ -211,40 +211,6 @@ Packages the app needs, given ` pkgs `\.
 
 *Type:*
 function that evaluates to a(n) list of package
-
-
-
-## preset\.args
-
-
-
-Startup args\.
-
-
-
-*Type:*
-list of string
-
-
-
-*Default:*
-
-```nix
-[ ]
-```
-
-
-
-## preset\.binary
-
-
-
-Binary in ` sandbox/bin ` to execute\.
-
-
-
-*Type:*
-string
 
 
 

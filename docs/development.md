@@ -7,11 +7,13 @@ nix flake check                 # the same tests, built and run by Nix
 
 `zandy.toml` is read in two layers. `nix/resolve.nix` is pure: it takes the parsed TOML and the catalog and decides everything; `nix/resolve-test.nix` tests it without files, nixpkgs or a build. `nix/config.nix` is the shell: it reads the file, imports nixpkgs and calls `mkSandboxEnv`.
 
+`tests/run-probe.sh` runs the sandbox probe on this machine.
+
 To try a local checkout in your env, override its `zandy` input:
 
 ```sh
 cd your-project
-nix run --override-input zandy path:$HOME/code/zandy ~/sandboxes
+nix run --override-input zandy path:$HOME/code/zandy ~/.zandy/envs/claude
 ```
 
 Use `path:`, not a plain path: a plain path is read as a git repo and leaves out untracked files.

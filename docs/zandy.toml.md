@@ -34,12 +34,12 @@ denyWrite = ["<path>", …]
 
 ## Description
 
-`zandy.toml` lies next to the env's `flake.nix` and is read when the env is built. Changes take effect at the next `nix profile upgrade`, never while an env runs.
+`zandy.toml` lies next to the env's `flake.nix`, in `~/.zandy/envs/<name>/`, and is read when the env is built. Changes take effect at the next `nix profile upgrade`, never while an env runs.
 
 Presets, gateways and adapters are named from the catalog, `ports.catalog` from [zandy-ports](https://github.com/tbsklg/zandy-ports) by default. Their tables hold their arguments; each port's README lists them.
 
 - `name` (required): The env's name, `[a-z0-9-]+`. The launcher is `zandy-<name>`.
-- `preset` (required): The program to run, with the sandbox rules it needs, e.g. `claude`, `opencode` or `shell`. With the presets from zandy-ports, the program can read the whole project and write it, except dot paths at any depth.
+- `preset` (required): The sandbox rules and packages a program needs, e.g. `claude`, `opencode` or `shell`. With the presets from zandy-ports, the program can read the whole project and write it, except dot paths at any depth.
 - `packages`: Extra programs the program may run, by nixpkgs attribute, e.g. `ripgrep` or `python3Packages.pytest`. A package that isn't in nixpkgs is added with an overlay in `flake.nix`; see [your own packages](nix.md#your-own-packages).
 - `[gateway.<gateway>]`: A proxy that adds an API's credential outside the sandbox, at most one, e.g. `anthropicOauth`, `anthropic`, `bedrock` or `openai`.
 - `[adapters.<adapter>]`: A tool the broker runs outside the sandbox, with your login, e.g. `gitlab` or `aws`. Any number.
@@ -75,7 +75,7 @@ preset = "claude"
 [gateway.anthropicOauth]
 ```
 
-Any command, here an `npm install` you don't trust, with `zandy-shell -c 'npm install --cache "$TMPDIR/npm"'`:
+Any command, here an `npm install` you don't trust, with `zandy-shell npm install --cache "$TMPDIR/npm"`:
 
 ```toml
 name = "shell"

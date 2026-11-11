@@ -4,7 +4,6 @@ mkSandboxEnv {
   name = "sandbox-test";
   preset = {
     name = "sandbox-test";
-    binary = "sandbox-probe";
     packages = pkgs: [ pkgs.bash pkgs.coreutils pkgs.procps ];
     env = [ "HOME" "TMPDIR" "USER" ];
     rules = [

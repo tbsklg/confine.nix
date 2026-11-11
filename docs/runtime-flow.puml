@@ -14,12 +14,12 @@ participant "launch" as Launch
 participant "registry" as Registry
 participant "broker / rpc" as Broker
 participant "macos / libsandbox" as Sandbox
-participant "preset binary\nsandbox/bin/<binary>" as Bin
+participant "command\nsandbox/bin/<command>, or the shell" as Bin
 participant "zandy-client" as Client
 participant "adapter binary\n/nix/store/…" as Tool
 participant "gateway proxy\ncaddy / aws-sigv4-proxy" as Gateway
 
-User -> Launcher : zandy-claude [args]  (or nix run)
+User -> Launcher : zandy-claude [command [args]]  (or nix run)
 Launcher -> Main : exec zandy --env <env> [args]
 Main -> Cli : parseArgs(argv)
 Cli --> Main : Launch (env, args)
@@ -49,7 +49,7 @@ Launch -> Launch : fork()
 group child process
   Launch -> Sandbox : sandbox_init_with_parameters(sbpl, CWD, HOME, TMPDIR, BROKER_SOCK)
   Sandbox --> Launch : rc == 0
-  Launch -> Bin : execve(sandbox/bin/<binary>, preset args + args, sandbox envp)
+  Launch -> Bin : execve(sandbox/bin/<command> or manifest shell, args, sandbox envp)
 end
 
 group parent process

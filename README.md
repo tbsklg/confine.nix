@@ -8,6 +8,8 @@ A sandbox for any command-line program on macOS: a coding agent, a test runner, 
 
 You write a `zandy.toml`: which program runs, which tools it may use and which API it may reach. zandy starts the program under a Seatbelt profile that denies everything else. Your credentials stay outside the sandbox: a gateway adds an API's key, and a broker runs your tools with their own logins.
 
+zandy uses [Nix](https://nixos.org) to build the programs the sandbox may run and to keep them read-only.
+
 This reduces what the program can reach, but it is not a complete isolation boundary; see [Security limits](docs/README.md#security-limits). Apple Silicon only.
 
 ## Quickstart
@@ -15,31 +17,29 @@ This reduces what the program can reach, but it is not a complete isolation boun
 This sets up Claude Code as the program. You need [Nix](https://nixos.org/download) with flakes, and a Claude login: run `claude` once outside zandy and log in.
 
 ```sh
-mkdir ~/sandboxes && cd ~/sandboxes
+mkdir -p ~/.zandy/envs/claude && cd ~/.zandy/envs/claude
 nix flake init -t github:tbsklg/zandy.nix
 nix profile add .
 ```
 
-Keep this directory outside your projects, so the program can't change its own sandbox.
-
 Then, in a project:
 
 ```sh
-zandy-[name]
+zandy-claude claude
 ```
 
-The env is configured in `~/sandboxes/zandy.toml`:
+The env is configured in `~/.zandy/envs/claude/zandy.toml`, where the sandbox can't read or change it:
 
 ```toml
 #:schema ./zandy.schema.json
 
-name = "guenther"
+name = "claude"
 preset = "claude"
 
 [gateway.anthropicOauth]
 ```
 
-After editing it, run `nix profile upgrade --all`. Until then, `zandy-[name]` keeps running the sandbox you installed.
+After editing it, run `nix profile upgrade --all`. Until then, `zandy-claude` keeps using the sandbox you installed.
 
 ## Documentation
 

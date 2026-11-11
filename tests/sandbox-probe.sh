@@ -49,6 +49,8 @@ expect denied "write zandy.toml" can_write ./zandy.toml
 
 echo "--- secrets"
 expect denied "list ~/.zandy" can_list ~/.zandy
+expect denied "read an env's zandy.toml" can_read ~/.zandy/envs/zandy-probe/zandy.toml
+expect denied "write an env's zandy.toml" can_write ~/.zandy/envs/zandy-probe/zandy.toml
 expect denied "list ~/Library/Keychains" can_list ~/Library/Keychains
 expect denied "read ~/.aws/credentials" can_read ~/.aws/credentials
 expect denied "list ~/.ssh" can_list ~/.ssh

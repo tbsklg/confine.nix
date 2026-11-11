@@ -12,7 +12,7 @@
 Reference: [zandy.toml](zandy.toml.md), [zandy](zandy.md), [zandy-client](zandy-client.md), [debug log](logging.md), [upgrade notes](upgrade.md), [zandy in Nix](nix.md)
 
 ```
-~/sandboxes/zandy.toml
+~/.zandy/envs/<name>/zandy.toml
    │ nix profile add
    ▼
 zandy-<name> ── starts gateway and broker, then the program
@@ -36,25 +36,25 @@ sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install)
 mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
 
-Create the env in its own directory, outside your projects, and install it:
+Create the env in `~/.zandy/envs/<name>/` and install it:
 
 ```sh
-mkdir ~/sandboxes && cd ~/sandboxes
+mkdir -p ~/.zandy/envs/claude && cd ~/.zandy/envs/claude
 nix flake init -t github:tbsklg/zandy.nix
 nix build .#schema -o zandy.schema.json
 nix profile add .                  # older Nix: nix profile install
 ```
 
-You edit `zandy.toml`; `flake.nix` stays as it is. The schema gives completion and checks in editors that read the `#:schema` line. If you keep the directory in git, `git add` new files: a flake in git only sees tracked files.
+You edit `zandy.toml`; `flake.nix` stays as it is. The sandbox can't read or write anything in `~/.zandy`, so the program can't see or change its own config. The schema gives completion and checks in editors that read the `#:schema` line. If you keep the directory in git, `git add` new files: a flake in git only sees tracked files.
 
 Run it from a project:
 
 ```sh
 cd your-project
-zandy-claude
+zandy-claude claude
 ```
 
-The template sets up Claude Code. For any other command, use the `shell` preset with what the command needs in `packages`, and run e.g. `zandy-shell -c 'make test'`. See [zandy.toml](zandy.toml.md#examples).
+Without a command, `zandy-claude` opens a shell in the sandbox. The template sets up Claude Code. For any other command, use the `shell` preset with what the command needs in `packages`, and run e.g. `zandy-shell make test`. See [zandy.toml](zandy.toml.md#examples).
 
 ## Reach an API
 
@@ -128,7 +128,7 @@ allowRead = ["~/notes"]
 After editing `zandy.toml`, upgrade. Until then, the installed env runs unchanged:
 
 ```sh
-cd ~/sandboxes && nix profile upgrade --all
+cd ~/.zandy/envs/claude && nix profile upgrade --all
 ```
 
 To pull the latest zandy and ports, then check the [upgrade notes](upgrade.md):
@@ -137,14 +137,14 @@ To pull the latest zandy and ports, then check the [upgrade notes](upgrade.md):
 nix flake update && nix build .#schema -o zandy.schema.json && nix profile upgrade --all
 ```
 
-`nix run ~/sandboxes` builds and runs the env as it is right now, without installing. Use it only to try out a change.
+`nix run ~/.zandy/envs/claude` builds and runs the env as it is right now, without installing. Use it only to try out a change.
 
 ## One env per project
 
 If a project needs its own toolchain, give it its own env with the tools in `packages`:
 
 ```sh
-mkdir ~/sandboxes/your-project && cd ~/sandboxes/your-project
+mkdir -p ~/.zandy/envs/your-project && cd ~/.zandy/envs/your-project
 nix flake init -t github:tbsklg/zandy.nix
 # set name = "your-project" and packages in zandy.toml
 nix profile add .
@@ -153,7 +153,7 @@ cd ~/code/your-project && zandy-your-project
 
 ## Security limits
 
-- **The sandbox is only as safe as its config.** The installed env is read-only, but its `zandy.toml` is not. Keep it where the program can't write, review changes before upgrading, and run the installed `zandy-<name>`. zandy write-protects `flake.nix`, `flake.lock` and `zandy.toml` in the project, nowhere else.
+- **The sandbox is only as safe as its config.** The installed env is read-only, but its `zandy.toml` is not. In `~/.zandy/envs/` the program can't reach it. Elsewhere, keep it where the program can't write; zandy write-protects `flake.nix`, `flake.lock` and `zandy.toml` only in the project. Review changes before upgrading, and run the installed `zandy-<name>`.
 - **Environment variables are readable.** On macOS, any process can read the environment and arguments of every other process of the same user. Don't export secrets in the shell that starts zandy; use `--zandy-secret`.
 - **Open adapters can print their credential:** `glab config get token`, `aws configure export-credentials`. Narrow adapters can't.
 - **Tools keep credentials in your home:** glab in `~/.config/glab-cli`, aws in `~/.aws`. The sandbox can't read them; an `allowRead` for `~` or `~/.config` would hand them to the program.
