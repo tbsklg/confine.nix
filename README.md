@@ -1,8 +1,4 @@
-<pre>
-╔═╗╔═╗╔╗╔╔╦╗╦ ╦
-╔═╝╠═╣║║║ ║║╚╦╝
-╚═╝╩ ╩╝╚╝═╩╝ ╩ .nix
-</pre>
+# confine.nix
 
 A sandbox for any command-line program on macOS: a coding agent, a test runner, an install script you don't trust.
 
