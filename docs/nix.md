@@ -60,7 +60,7 @@ packages.aarch64-darwin.default = zandy.lib.mkSandboxEnv {
 
 ## Presets
 
-A preset is a plain attrset: the packages a program needs, the env vars it gets and its Seatbelt rules. Any program can have one. This one is for curl, which may reach HTTPS hosts and nothing else, not even the project:
+A preset is a plain attrset: the packages a program needs, the env vars it gets or is set and its Seatbelt rules. Any program can have one. This one is for curl, which may reach HTTPS hosts and nothing else, not even the project:
 
 ```nix
 packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
@@ -69,6 +69,7 @@ packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
   preset = {
     name = "curl";
     packages = pkgs: [ pkgs.curl pkgs.cacert ];
+    setEnv = pkgs: { CURL_CA_BUNDLE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"; };
     rules = [
       { action = "allow"; operation = "file_read_metadata"; }
       { action = "allow"; operation = "file_map_executable"; }
@@ -81,7 +82,7 @@ packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
 ```
 
 ```sh
-nix run ~/.zandy/envs/claude#curl -- curl --cacert "$(nix build --print-out-paths nixpkgs#cacert)/etc/ssl/certs/ca-bundle.crt" https://example.com
+nix run ~/.zandy/envs/claude#curl -- curl https://example.com
 ```
 
 To start from an existing preset, override it: `ports.presets.claude // { name = "mine"; }` gives Claude Code's rules to adjust. Start with few rules and add what the [debug log](logging.md) shows as denied.

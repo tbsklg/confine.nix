@@ -310,3 +310,24 @@ list of (attribute set)
 ```
 
 
+
+## preset\.setEnv
+
+
+
+Env vars set in the sandbox, given ` pkgs `\. Store paths in them must be in ` packages `\.
+
+
+
+*Type:*
+function that evaluates to a(n) attribute set of string
+
+
+
+*Default:*
+
+```nix
+<function>
+```
+
+

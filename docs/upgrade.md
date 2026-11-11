@@ -2,6 +2,18 @@
 
 Changes that need you to act, newest first. After each, run `nix flake update && nix profile upgrade --all` in your env's directory.
 
+## 2026-11-11: name the command
+
+`zandy-<name>` no longer starts the preset's program. Name the command; without one, zandy opens a shell in the sandbox.
+
+```sh
+zandy-claude claude              # was: zandy-claude
+zandy-claude claude -p "hi"      # was: zandy-claude -p "hi"
+zandy-shell npm install          # was: zandy-shell -c 'npm install'
+```
+
+A preset no longer has `binary` or `args`. A preset of your own in Nix drops both; startup args go into a wrapper script in its `packages`.
+
 ## 2026-11-10: envs live in ~/.zandy/envs
 
 An env's directory, with its `flake.nix` and `zandy.toml`, now belongs in `~/.zandy/envs/<name>/`. The sandbox can't read or write `~/.zandy`, so the program can't see or change its own config. Anywhere else, only `flake.nix`, `flake.lock` and `zandy.toml` in the project are protected.

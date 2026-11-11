@@ -6,6 +6,7 @@ const gateway = @import("../gateway.zig");
 pub const Preset = struct {
     name: []const u8,
     env: []const []const u8 = &.{},
+    setEnv: std.json.ArrayHashMap([]const u8) = .{},
     gatewayEnv: []const gateway.Env = &.{},
     profile: sbpl.Profile,
 };
@@ -34,7 +35,7 @@ test "parses a manifest and defaults filesystem" {
     defer arena_state.deinit();
 
     const manifest = try parse(arena_state.allocator(),
-        \\{"shell":"/nix/store/lw5h7x6kxqdx6m8wnsqjjzj6fd1i9x2j-bash-5.3/bin/bash","preset":{"name":"claude","env":["HOME"],
+        \\{"shell":"/nix/store/lw5h7x6kxqdx6m8wnsqjjzj6fd1i9x2j-bash-5.3/bin/bash","preset":{"name":"claude","env":["HOME"],"setEnv":{"SSL_CERT_FILE":"/nix/store/x-cacert/ca-bundle.crt"},
         \\  "profile":{"rules":[
         \\    {"action":"allow","operation":"file_all","filter":{"subpath":{"param_append":{"param":"HOME","suffix":"/.claude"}}}},
         \\    {"action":"allow","operation":"process_fork"}
@@ -44,6 +45,7 @@ test "parses a manifest and defaults filesystem" {
     );
 
     try std.testing.expectEqualStrings("/nix/store/lw5h7x6kxqdx6m8wnsqjjzj6fd1i9x2j-bash-5.3/bin/bash", manifest.shell);
+    try std.testing.expectEqualStrings("/nix/store/x-cacert/ca-bundle.crt", manifest.preset.setEnv.map.get("SSL_CERT_FILE").?);
     try std.testing.expectEqualStrings("/.claude", manifest.preset.profile.rules[0].filter.?.subpath.param_append.suffix);
     try std.testing.expectEqual(null, manifest.preset.profile.rules[1].filter);
     try std.testing.expectEqualStrings("gitlab", manifest.adapters[0].name);

@@ -34,6 +34,7 @@ let
       manifest = {
         preset = {
           inherit (preset) name env;
+          setEnv = preset.setEnv pkgs;
           inherit gatewayEnv;
           profile.rules = preset.rules;
         };

@@ -202,6 +202,7 @@ fn sandboxEnviron(arena: std.mem.Allocator, environ: *const std.process.Environ.
     for (preset.env) |name| {
         if (environ.get(name)) |value| try map.put(name, value);
     }
+    for (preset.setEnv.map.keys(), preset.setEnv.map.values()) |name, value| try map.put(name, value);
     try map.put("PATH", bin_dir);
     try map.put("SHELL", shell);
     try map.put("BROKER_SOCK", sock_path);

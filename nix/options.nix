@@ -23,6 +23,7 @@ in
           icon = mkOption { type = types.str; default = ""; description = "Symbol shown in the start banner."; };
           packages = mkOption { type = types.functionTo (types.listOf types.package); description = "Packages the app needs, given `pkgs`."; };
           env = mkOption { type = types.listOf types.str; default = [ ]; description = "Names of the environment variables passed into the sandbox."; };
+          setEnv = mkOption { type = types.functionTo (types.attrsOf types.str); default = _: { }; description = "Env vars set in the sandbox, given `pkgs`. Store paths in them must be in `packages`."; };
           gatewayEnv = mkOption { type = types.attrsOf (types.either (types.attrsOf types.str) (types.functionTo (types.attrsOf types.str))); default = { }; description = "Env vars the app gets per gateway name, or a function of the gateway; `{url}` becomes the gateway's address."; };
           rules = mkOption { type = types.listOf types.attrs; description = "SBPL rules the app needs."; };
         };
