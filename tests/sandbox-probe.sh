@@ -42,15 +42,15 @@ known_gap() {
 }
 
 echo "--- project"
-expect allowed "write a file in the project" can_write ./zandy-probe
+expect allowed "write a file in the project" can_write ./confine-probe
 expect denied "write flake.nix" can_write ./flake.nix
 expect denied "write flake.lock" can_write ./flake.lock
-expect denied "write zandy.toml" can_write ./zandy.toml
+expect denied "write confine.toml" can_write ./confine.toml
 
 echo "--- secrets"
-expect denied "list ~/.zandy" can_list ~/.zandy
-expect denied "read an env's zandy.toml" can_read ~/.zandy/envs/zandy-probe/zandy.toml
-expect denied "write an env's zandy.toml" can_write ~/.zandy/envs/zandy-probe/zandy.toml
+expect denied "list ~/.confine" can_list ~/.confine
+expect denied "read an env's confine.toml" can_read ~/.confine/envs/confine-probe/confine.toml
+expect denied "write an env's confine.toml" can_write ~/.confine/envs/confine-probe/confine.toml
 expect denied "list ~/Library/Keychains" can_list ~/Library/Keychains
 expect denied "read ~/.aws/credentials" can_read ~/.aws/credentials
 expect denied "list ~/.ssh" can_list ~/.ssh
@@ -63,7 +63,7 @@ expect denied "run /usr/bin/true" can_exec /usr/bin/true
 
 echo "--- shared temp"
 known_gap "list /private/var/folders" can_list /private/var/folders
-known_gap "write /private/tmp" can_write /private/tmp/zandy-probe
+known_gap "write /private/tmp" can_write /private/tmp/confine-probe
 
 echo "--- network"
 expect denied "connect to port 80" can_connect 1.1.1.1 80

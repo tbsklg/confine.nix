@@ -24,7 +24,7 @@ let
 
   schema = {
     "$schema" = "http://json-schema.org/draft-07/schema#";
-    title = "zandy.toml";
+    title = "confine.toml";
     type = "object";
     additionalProperties = false;
     required = [ "name" "preset" ];
@@ -47,7 +47,7 @@ let
           additionalProperties = object [ "package" "capabilities" ] {
             package = { type = "string"; description = "The tool, by nixpkgs attribute."; };
             binary = { type = "string"; description = "The program in the package's bin, if not its main program."; };
-            env = strings "Env vars passed on from the shell that started zandy. Not for secrets.";
+            env = strings "Env vars passed on from the shell that started confine. Not for secrets.";
             setEnv = { type = "object"; additionalProperties.type = "string"; description = "Env vars set for the command."; };
             capabilities = {
               type = "array";

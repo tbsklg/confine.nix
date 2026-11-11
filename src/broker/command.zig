@@ -247,11 +247,11 @@ test "run returns stderr when the command fails" {
     const cap: registry.Capability = .{
         .name = "ls",
         .binary = "/bin/ls",
-        .argv = &.{.{ .literal = "/nonexistent-zandy" }},
+        .argv = &.{.{ .literal = "/nonexistent-confine" }},
     };
     const outcome = try run(arena_state.allocator(), std.testing.io, cap, .{ .values = &.{} }, null);
 
-    try std.testing.expect(std.mem.indexOf(u8, outcome.failure, "nonexistent-zandy") != null);
+    try std.testing.expect(std.mem.indexOf(u8, outcome.failure, "nonexistent-confine") != null);
 }
 
 test "a list param expands into one argv entry per item, flags included" {

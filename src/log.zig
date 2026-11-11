@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const subsystem = "tbsklg.zandy";
+const subsystem = "tbsklg.confine";
 
 const OsLog = opaque {};
 
@@ -13,7 +13,7 @@ const LogType = enum(u8) {
 extern "c" fn os_log_create(subsystem: [*:0]const u8, category: [*:0]const u8) ?*OsLog;
 extern "c" fn os_log_type_enabled(log: *OsLog, kind: LogType) bool;
 extern "c" fn os_release(object: *anyopaque) void;
-extern "c" fn zandy_os_log_with_type(log: *OsLog, kind: LogType, message: [*:0]const u8) void;
+extern "c" fn confine_os_log_with_type(log: *OsLog, kind: LogType, message: [*:0]const u8) void;
 
 pub fn logFn(
     comptime level: std.log.Level,
@@ -36,7 +36,7 @@ pub fn logFn(
         break :truncated buf[0 .. buf.len - 1 :0];
     };
 
-    zandy_os_log_with_type(log, kind, message.ptr);
+    confine_os_log_with_type(log, kind, message.ptr);
 }
 
 // One os_log handle per scope, created once and reused: creating one per log

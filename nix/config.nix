@@ -18,7 +18,7 @@ in
 
   schemaFor = { system, catalog }:
     let pkgs = import nixpkgs { inherit system; };
-    in pkgs.runCommand "zandy.schema.json" { nativeBuildInputs = [ pkgs.jq ]; } ''
+    in pkgs.runCommand "confine.schema.json" { nativeBuildInputs = [ pkgs.jq ]; } ''
       jq --sort-keys . ${pkgs.writeText "schema.json" (builtins.toJSON (import ./schema.nix lib catalog))} > $out
     '';
 }

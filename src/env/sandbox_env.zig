@@ -32,7 +32,7 @@ pub fn load(arena: std.mem.Allocator, io: std.Io, path: []const u8) !SandboxEnv 
     const root = try store.parse(try std.Io.Dir.cwd().realPathFileAlloc(io, path, arena));
     const dir = std.Io.Dir.cwd();
     const store_paths = try dir.readFileAlloc(io, try std.fs.path.join(arena, &.{ root.path, "store-paths" }), arena, .limited(16 * 1024 * 1024));
-    const manifest_json = try dir.readFileAlloc(io, try std.fs.path.join(arena, &.{ root.path, "zandy.json" }), arena, .limited(16 * 1024 * 1024));
+    const manifest_json = try dir.readFileAlloc(io, try std.fs.path.join(arena, &.{ root.path, "confine.json" }), arena, .limited(16 * 1024 * 1024));
     return parse(arena, root, store_paths, manifest_json);
 }
 

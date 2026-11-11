@@ -1,10 +1,10 @@
 @startuml runtime-flow
-title zandy — runtime flow
+title confine — runtime flow
 
 skinparam shadowing false
 
 actor "user" as User
-participant "launcher\nbin/zandy-<name>" as Launcher
+participant "launcher\nbin/confine-<name>" as Launcher
 participant "main" as Main
 participant "cli" as Cli
 participant "SandboxEnv" as SEnv
@@ -15,19 +15,19 @@ participant "registry" as Registry
 participant "broker / rpc" as Broker
 participant "macos / libsandbox" as Sandbox
 participant "command\nsandbox/bin/<command>, or the shell" as Bin
-participant "zandy-client" as Client
+participant "confine-client" as Client
 participant "adapter binary\n/nix/store/…" as Tool
 participant "gateway proxy\ncaddy / aws-sigv4-proxy" as Gateway
 
-User -> Launcher : zandy-claude [command [args]]  (or nix run)
-Launcher -> Main : exec zandy --env <env> [args]
+User -> Launcher : confine-claude [command [args]]  (or nix run)
+Launcher -> Main : exec confine --env <env> [args]
 Main -> Cli : parseArgs(argv)
 Cli --> Main : Launch (env, args)
 
 Main -> SEnv : load(env)
 SEnv -> SEnv : realpath → StorePath
 SEnv -> SEnv : parse store-paths → closure (+ env itself)
-SEnv -> SEnv : parse zandy.json → Manifest
+SEnv -> SEnv : parse confine.json → Manifest
 SEnv -> SEnv : no adapter binary in closure
 SEnv --> Main : SandboxEnv
 
@@ -37,7 +37,7 @@ Main -> Profile : buildProfile(preset.profile, env, filesystem, closure)
 Profile --> Main : sbpl.Profile (preset rules + exec/read per store path + filesystem)
 
 Main -> Launch : launch(init, sandbox_env, args, profile, env)
-Launch -> Gateway : start(argv, env + ZANDY_GATEWAY_PORT), wait until listening
+Launch -> Gateway : start(argv, env + CONFINE_GATEWAY_PORT), wait until listening
 Launch -> Launch : serialize(profile + allow localhost:<gateway port>) → SBPL text
 Launch -> Broker : listen(BROKER_SOCK)
 Launch -> Launch : sandbox Environ.Map (preset env names + PATH, SHELL, BROKER_SOCK, BROKER_TICKET, gatewayEnv with {url})
@@ -65,7 +65,7 @@ group model request
 end
 
 group broker call
-  Bin -> Client : zandy-client call <method> '<json args>'
+  Bin -> Client : confine-client call <method> '<json args>'
   Client -> Broker : JSON-RPC {method, params: {ticket, args}}
   Broker -> Broker : check ticket, find (policy), parseParams, buildArgv
   Broker -> Tool : spawn by store path (PATH, HOME, adapter env)

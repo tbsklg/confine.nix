@@ -44,7 +44,7 @@ pub fn start(arena: std.mem.Allocator, io: std.Io, gateway: Gateway, environ: *c
     }
     var it = gateway.env.map.iterator();
     while (it.next()) |entry| try child_environ.put(entry.key_ptr.*, try secret.withDir(arena, entry.value_ptr.*, dir));
-    try child_environ.put("ZANDY_GATEWAY_PORT", port_text);
+    try child_environ.put("CONFINE_GATEWAY_PORT", port_text);
 
     var child = try std.process.spawn(io, .{
         .argv = try fillArgv(arena, gateway.argv, port_text, dir),
@@ -114,14 +114,14 @@ test "environFor fills in the url of the running gateway" {
     const running: Running = .{ .name = "anthropic", .port = 4711, .url = "http://127.0.0.1:4711", .child = undefined };
     const entries = [_]Env{
         .{ .gateway = "anthropic", .name = "ANTHROPIC_BASE_URL", .value = "{url}" },
-        .{ .gateway = "anthropic", .name = "ANTHROPIC_AUTH_TOKEN", .value = "zandy-gateway" },
+        .{ .gateway = "anthropic", .name = "ANTHROPIC_AUTH_TOKEN", .value = "confine-gateway" },
         .{ .gateway = "bedrock", .name = "ANTHROPIC_BEDROCK_BASE_URL", .value = "{url}" },
     };
 
     const vars = try environFor(arena_state.allocator(), &entries, running);
     try std.testing.expectEqual(2, vars.len);
     try std.testing.expectEqualStrings("http://127.0.0.1:4711", vars[0].value);
-    try std.testing.expectEqualStrings("zandy-gateway", vars[1].value);
+    try std.testing.expectEqualStrings("confine-gateway", vars[1].value);
 }
 
 test "parses the secrets and files of a gateway" {

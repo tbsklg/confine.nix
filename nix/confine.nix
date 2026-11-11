@@ -2,8 +2,8 @@
 let
   zig = pkgs.zig_0_16;
 
-  zandy = pkgs.stdenvNoCC.mkDerivation {
-    pname = "zandy";
+  confine = pkgs.stdenvNoCC.mkDerivation {
+    pname = "confine";
     version = builtins.head (builtins.match ".*\n[[:space:]]*\.version = \"([^\"]+)\".*" (builtins.readFile ../build.zig.zon));
     src = pkgs.lib.fileset.toSource {
       root = ../.;
@@ -18,17 +18,17 @@ let
     meta.platforms = [ "aarch64-darwin" ];
   };
 
-  tests = zandy.overrideAttrs {
-    pname = "zandy-tests";
+  tests = confine.overrideAttrs {
+    pname = "confine-tests";
     doCheck = true;
     __darwinAllowLocalNetworking = true;
   };
 
-  zandy-client = pkgs.runCommand "zandy-client" { } ''
+  confine-client = pkgs.runCommand "confine-client" { } ''
     mkdir -p $out/bin
-    cp ${zandy}/bin/zandy-client $out/bin/
+    cp ${confine}/bin/confine-client $out/bin/
   '';
 in
 {
-  inherit zig zandy zandy-client tests;
+  inherit zig confine confine-client tests;
 }

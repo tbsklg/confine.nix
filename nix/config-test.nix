@@ -5,7 +5,7 @@ in
 {
   config-test = fromConfig {
     inherit system catalog;
-    config = ../tests/zandy.toml;
+    config = ../tests/confine.toml;
     overlays = [
       (final: prev: {
         greet = prev.writeShellScriptBin "greet" ''echo "$1"'';

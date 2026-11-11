@@ -3,13 +3,13 @@ const broker = @import("broker/server.zig");
 const rpc = @import("broker/rpc.zig");
 
 const usage =
-    \\usage: zandy-client discover
-    \\       zandy-client call <method> ['<json args>']
+    \\usage: confine-client discover
+    \\       confine-client call <method> ['<json args>']
 ;
 
 pub fn main(init: std.process.Init) u8 {
     run(init) catch |err| {
-        if (err != error.Reported) std.debug.print("zandy-client: {s}\n", .{message(err)});
+        if (err != error.Reported) std.debug.print("confine-client: {s}\n", .{message(err)});
         return exitCode(err);
     };
     return 0;
@@ -69,7 +69,7 @@ fn send(io: std.Io, arena: std.mem.Allocator, config: Config, method: []const u8
     return switch (try parseReply(arena, line)) {
         .result => |result| result,
         .failure => |msg| {
-            std.debug.print("zandy-client: {s}\n", .{msg});
+            std.debug.print("confine-client: {s}\n", .{msg});
             return error.Reported;
         },
     };
@@ -189,7 +189,7 @@ test "parseCommand parses discover" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
 
-    const argv = [_][:0]const u8{ "zandy-client", "discover" };
+    const argv = [_][:0]const u8{ "confine-client", "discover" };
 
     try std.testing.expectEqual(.discover, try parseCommand(arena_state.allocator(), &argv));
 }
@@ -198,7 +198,7 @@ test "parseCommand parses call with args" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
 
-    const argv = [_][:0]const u8{ "zandy-client", "call", "gitlab.cli", "{\"args\":[\"issue\",\"list\"]}" };
+    const argv = [_][:0]const u8{ "confine-client", "call", "gitlab.cli", "{\"args\":[\"issue\",\"list\"]}" };
     const command = try parseCommand(arena_state.allocator(), &argv);
 
     try std.testing.expectEqualStrings("gitlab.cli", command.call.method);
@@ -209,7 +209,7 @@ test "parseCommand defaults call args to an empty object" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
 
-    const argv = [_][:0]const u8{ "zandy-client", "call", "backend.credentials" };
+    const argv = [_][:0]const u8{ "confine-client", "call", "backend.credentials" };
     const command = try parseCommand(arena_state.allocator(), &argv);
 
     try std.testing.expectEqual(0, command.call.args.object.count());
@@ -220,10 +220,10 @@ test "parseCommand rejects unknown commands and wrong arity" {
     defer arena_state.deinit();
     const arena = arena_state.allocator();
 
-    try std.testing.expectError(error.Usage, parseCommand(arena, &.{"zandy-client"}));
-    try std.testing.expectError(error.Usage, parseCommand(arena, &.{ "zandy-client", "list" }));
-    try std.testing.expectError(error.Usage, parseCommand(arena, &.{ "zandy-client", "discover", "extra" }));
-    try std.testing.expectError(error.Usage, parseCommand(arena, &.{ "zandy-client", "call" }));
+    try std.testing.expectError(error.Usage, parseCommand(arena, &.{"confine-client"}));
+    try std.testing.expectError(error.Usage, parseCommand(arena, &.{ "confine-client", "list" }));
+    try std.testing.expectError(error.Usage, parseCommand(arena, &.{ "confine-client", "discover", "extra" }));
+    try std.testing.expectError(error.Usage, parseCommand(arena, &.{ "confine-client", "call" }));
 }
 
 test "readConfig returns socket and ticket from env" {

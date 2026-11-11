@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 
 comptime {
     if (builtin.os.tag != .macos or builtin.cpu.arch != .aarch64) {
-        @compileError("zandy runs on macOS on Apple Silicon only");
+        @compileError("confine runs on macOS on Apple Silicon only");
     }
 }
 

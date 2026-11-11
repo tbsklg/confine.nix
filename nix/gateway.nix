@@ -5,7 +5,7 @@ let
     admin.disabled = true;
     logging.logs.default.level = "ERROR";
     apps.http.servers.gateway = {
-      listen = [ "127.0.0.1:{env.ZANDY_GATEWAY_PORT}" ];
+      listen = [ "127.0.0.1:{env.CONFINE_GATEWAY_PORT}" ];
       automatic_https.disable = true;
       routes = [{
         handle = [{

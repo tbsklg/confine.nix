@@ -1,4 +1,4 @@
-#:schema ./zandy.schema.json
+#:schema ./confine.schema.json
 
 name = "claude"
 preset = "claude"

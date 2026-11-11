@@ -1,13 +1,13 @@
 lib:
 { catalog, toml }:
 let
-  fail = message: throw "zandy.toml: ${message}";
+  fail = message: throw "confine.toml: ${message}";
 
   pick = key: ports: name: ports.${name}
     or (fail "${key} \"${name}\" unknown, one of: ${lib.concatStringsSep ", " (lib.attrNames ports)}");
   resolve = key: ports: name: given:
     let port = pick key ports name;
-    in { unfree = port.unfree or [ ]; value = builtins.addErrorContext "while reading [${key}.${name}] in zandy.toml" (port.call given); };
+    in { unfree = port.unfree or [ ]; value = builtins.addErrorContext "while reading [${key}.${name}] in confine.toml" (port.call given); };
 
   only = at: keys: given:
     let unknown = lib.subtractLists keys (lib.attrNames given);
@@ -38,8 +38,8 @@ let
   gateways = lib.mapAttrsToList (resolve "gateway" catalog.gateways) (toml.gateway or { });
   adapters = lib.mapAttrsToList (resolve "adapters" catalog.adapters) (toml.adapters or { });
 in
-assert lib.assertMsg (lib.length gateways <= 1) "zandy.toml: at most one gateway";
-assert lib.assertMsg (clashes == [ ]) "zandy.toml: ${lib.concatStringsSep ", " clashes} both in [adapters] and [define.adapters]";
+assert lib.assertMsg (lib.length gateways <= 1) "confine.toml: at most one gateway";
+assert lib.assertMsg (clashes == [ ]) "confine.toml: ${lib.concatStringsSep ", " clashes} both in [adapters] and [define.adapters]";
 builtins.removeAttrs toml [ "define" ] // {
   preset = preset.value;
   gateway = if gateways == [ ] then null else (lib.head gateways).value;

@@ -1,11 +1,11 @@
-# zandy.toml
+# confine.toml
 
-The configuration of one zandy env.
+The configuration of one confine env.
 
 ## Synopsis
 
 ```toml
-#:schema ./zandy.schema.json
+#:schema ./confine.schema.json
 
 name = "<name>"
 preset = "<preset>"
@@ -34,12 +34,12 @@ denyWrite = ["<path>", …]
 
 ## Description
 
-`zandy.toml` lies next to the env's `flake.nix`, in `~/.zandy/envs/<name>/`, and is read when the env is built. Changes take effect at the next `nix profile upgrade`, never while an env runs.
+`confine.toml` lies next to the env's `flake.nix`, in `~/.confine/envs/<name>/`, and is read when the env is built. Changes take effect at the next `nix profile upgrade`, never while an env runs.
 
-Presets, gateways and adapters are named from the catalog, `ports.catalog` from [zandy-ports](https://github.com/tbsklg/zandy-ports) by default. Their tables hold their arguments; each port's README lists them.
+Presets, gateways and adapters are named from the catalog, `ports.catalog` from [confine-ports](https://github.com/tbsklg/confine-ports) by default. Their tables hold their arguments; each port's README lists them.
 
-- `name` (required): The env's name, `[a-z0-9-]+`. The launcher is `zandy-<name>`.
-- `preset` (required): The sandbox rules and packages a program needs, e.g. `claude`, `opencode` or `shell`. With the presets from zandy-ports, the program can read the whole project and write it, except dot paths at any depth.
+- `name` (required): The env's name, `[a-z0-9-]+`. The launcher is `confine-<name>`.
+- `preset` (required): The sandbox rules and packages a program needs, e.g. `claude`, `opencode` or `shell`. With the presets from confine-ports, the program can read the whole project and write it, except dot paths at any depth.
 - `packages`: Extra programs the program may run, by nixpkgs attribute, e.g. `ripgrep` or `python3Packages.pytest`. A package that isn't in nixpkgs is added with an overlay in `flake.nix`; see [your own packages](nix.md#your-own-packages).
 - `[gateway.<gateway>]`: A proxy that adds an API's credential outside the sandbox, at most one, e.g. `anthropicOauth`, `anthropic`, `bedrock` or `openai`.
 - `[adapters.<adapter>]`: A tool the broker runs outside the sandbox, with your login, e.g. `gitlab` or `aws`. Any number.
@@ -49,7 +49,7 @@ Presets, gateways and adapters are named from the catalog, `ports.catalog` from 
   |---|---|
   | `package` | The tool, by nixpkgs attribute (required) |
   | `binary` | The program in the package, if not its main program |
-  | `env` | Env vars passed on from the shell that started zandy. Not for secrets |
+  | `env` | Env vars passed on from the shell that started confine. Not for secrets |
   | `setEnv` | Env vars set for the tool |
   | `capabilities` | The methods, called as `<name>.<method>` (required) |
 
@@ -61,8 +61,8 @@ An unknown key, name or argument fails the build and names it.
 
 ## Files
 
-- `flake.nix`: Reads `zandy.toml`. Not edited.
-- `zandy.schema.json`: Built with `nix build .#schema -o zandy.schema.json`. Editors that read the `#:schema` line use it for completion and checks. It matches the pinned zandy and ports; rebuild it after `nix flake update`.
+- `flake.nix`: Reads `confine.toml`. Not edited.
+- `confine.schema.json`: Built with `nix build .#schema -o confine.schema.json`. Editors that read the `#:schema` line use it for completion and checks. It matches the pinned confine and ports; rebuild it after `nix flake update`.
 
 ## Examples
 
@@ -75,7 +75,7 @@ preset = "claude"
 [gateway.anthropicOauth]
 ```
 
-Any command, here an `npm install` you don't trust, with `zandy-shell npm install --cache "$TMPDIR/npm"`:
+Any command, here an `npm install` you don't trust, with `confine-shell npm install --cache "$TMPDIR/npm"`:
 
 ```toml
 name = "shell"
@@ -123,7 +123,7 @@ argv = ["issue", "view", "{id}", "--repo", "{repo}"]
 
 ## See also
 
-[zandy](zandy.md), [zandy-client](zandy-client.md), [Using zandy](README.md), [zandy in Nix](nix.md)
+[confine](confine.md), [confine-client](confine-client.md), [Using confine](README.md), [confine in Nix](nix.md)
 
 ## Caveats
 

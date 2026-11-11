@@ -2,6 +2,27 @@
 
 Changes that need you to act, newest first. After each, run `nix flake update && nix profile upgrade --all` in your env's directory.
 
+## 2026-11-11: zandy is now confine
+
+zandy is renamed to confine, and zandy-ports to confine-ports: `confine-<name>`, `confine-client`, `confine.toml`, `~/.confine`, `--confine-secret` and `--confine-config`. The flakes are `github:tbsklg/confine.nix` and `github:tbsklg/confine-ports`.
+
+To move an env:
+
+```sh
+mv ~/.zandy ~/.confine
+mv ~/.confine/zandy.keychain-db ~/.confine/confine.keychain-db
+cd ~/.confine/envs/<name>
+mv zandy.toml confine.toml
+sed -i "" s/zandy.schema/confine.schema/ confine.toml
+rm flake.nix flake.lock zandy.schema.json
+nix flake init -t github:tbsklg/confine.nix
+nix build .#schema -o confine.schema.json
+nix profile remove <name>                    # the old entry, as `nix profile list` names it
+nix profile add .
+```
+
+Stored secrets are kept: confine finds them by service name. The log subsystem is `tbsklg.confine`.
+
 ## 2026-11-11: name the command
 
 `zandy-<name>` no longer starts the preset's program. Name the command; without one, zandy opens a shell in the sandbox.

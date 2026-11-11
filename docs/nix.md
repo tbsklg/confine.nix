@@ -1,6 +1,6 @@
-# zandy in Nix
+# confine in Nix
 
-`zandy.toml` covers picking ports. For a preset, gateway or adapter of your own, or one that needs secrets, use Nix in your env's `flake.nix`.
+`confine.toml` covers picking ports. For a preset, gateway or adapter of your own, or one that needs secrets, use Nix in your env's `flake.nix`.
 
 - [Your own packages](#your-own-packages)
 - [mkSandboxEnv](#mksandboxenv)
@@ -12,12 +12,12 @@
 
 ## Your own packages
 
-`zandy.toml` names packages; it doesn't build them. To use one that isn't in nixpkgs, add it with an overlay in `flake.nix`, and name it in `packages` or as an adapter's `package`:
+`confine.toml` names packages; it doesn't build them. To use one that isn't in nixpkgs, add it with an overlay in `flake.nix`, and name it in `packages` or as an adapter's `package`:
 
 ```nix
-default = zandy.lib.fromConfig {
+default = confine.lib.fromConfig {
   inherit system catalog;
-  config = ./zandy.toml;
+  config = ./confine.toml;
   overlays = [
     (final: prev: {
       say = prev.writeShellScriptBin "say" ''exec /usr/bin/say -v "$1" "$2"'';
@@ -42,10 +42,10 @@ argv = ["{voice}", "{text}"]
 
 ## mkSandboxEnv
 
-`zandy.toml` is read by `zandy.lib.fromConfig`, which calls `zandy.lib.mkSandboxEnv`. You can call it directly:
+`confine.toml` is read by `confine.lib.fromConfig`, which calls `confine.lib.mkSandboxEnv`. You can call it directly:
 
 ```nix
-packages.aarch64-darwin.default = zandy.lib.mkSandboxEnv {
+packages.aarch64-darwin.default = confine.lib.mkSandboxEnv {
   inherit pkgs;
   name = "claude";
   preset = ports.presets.claude // { rules = ports.rules.project ++ ports.presets.claude.rules; };
@@ -63,7 +63,7 @@ packages.aarch64-darwin.default = zandy.lib.mkSandboxEnv {
 A preset is a plain attrset: the packages a program needs, the env vars it gets or is set and its Seatbelt rules. Any program can have one. This one is for curl, which may reach HTTPS hosts and nothing else, not even the project:
 
 ```nix
-packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
+packages.aarch64-darwin.curl = confine.lib.mkSandboxEnv {
   inherit pkgs;
   name = "curl";
   preset = {
@@ -82,31 +82,31 @@ packages.aarch64-darwin.curl = zandy.lib.mkSandboxEnv {
 ```
 
 ```sh
-nix run ~/.zandy/envs/claude#curl -- curl https://example.com
+nix run ~/.confine/envs/claude#curl -- curl https://example.com
 ```
 
 To start from an existing preset, override it: `ports.presets.claude // { name = "mine"; }` gives Claude Code's rules to adjust. Start with few rules and add what the [debug log](logging.md) shows as denied.
 
 ## Rules
 
-The sandbox denies everything no rule allows. zandy adds rules in this order:
+The sandbox denies everything no rule allows. confine adds rules in this order:
 
-1. zandy's own allows: the broker socket
+1. confine's own allows: the broker socket
 2. the preset's `rules`
 3. read and execute for the env's store paths
 4. `filesystem`
-5. zandy's own denies: `flake.nix`, `flake.lock` and `zandy.toml` in the project, `~/.zandy` and the keychain
+5. confine's own denies: `flake.nix`, `flake.lock` and `confine.toml` in the project, `~/.confine` and the keychain
 
-For the same operation, a later rule wins. A rule for a specific operation, like `file-write-data`, wins over a wildcard, like `file-write*`, wherever it stands. So a deny on `file-write*` alone doesn't hold. zandy denies its own paths for `file-write*` and every specific write operation, so neither a preset nor `filesystem` can open them.
+For the same operation, a later rule wins. A rule for a specific operation, like `file-write-data`, wins over a wildcard, like `file-write*`, wherever it stands. So a deny on `file-write*` alone doesn't hold. confine denies its own paths for `file-write*` and every specific write operation, so neither a preset nor `filesystem` can open them.
 
-zandy's own rules are in [base.zon](https://github.com/tbsklg/zandy.nix/blob/main/src/sandbox/base.zon); the operations and filters a rule may use are in [sbpl.zig](https://github.com/tbsklg/zandy.nix/blob/main/src/sandbox/sbpl.zig). Rules for the project directory are policy and come from zandy-ports: `ports.rules.project`.
+confine's own rules are in [base.zon](https://github.com/tbsklg/confine.nix/blob/main/src/sandbox/base.zon); the operations and filters a rule may use are in [sbpl.zig](https://github.com/tbsklg/confine.nix/blob/main/src/sandbox/sbpl.zig). Rules for the project directory are policy and come from confine-ports: `ports.rules.project`.
 
 ## Gateways
 
-`zandy.lib.mkGateway` builds a gateway on Caddy:
+`confine.lib.mkGateway` builds a gateway on Caddy:
 
 ```nix
-gateway = zandy.lib.mkGateway {
+gateway = confine.lib.mkGateway {
   name = "anthropic";
   host = "api.anthropic.com";
   headers.X-Api-Key = [ "{env.ANTHROPIC_API_KEY}" ];
@@ -124,11 +124,11 @@ gateway = zandy.lib.mkGateway {
 
 The gateway drops the client's own `Authorization` and `X-Api-Key` headers.
 
-A gateway that isn't Caddy is an attrset with `name`, an `argv` in which `{port}` is replaced with the port zandy picks, and optionally `env`, `secrets` and `files`. The Bedrock gateway in zandy-ports is one.
+A gateway that isn't Caddy is an attrset with `name`, an `argv` in which `{port}` is replaced with the port confine picks, and optionally `env`, `secrets` and `files`. The Bedrock gateway in confine-ports is one.
 
 ## Adapters
 
-An adapter is a function from `pkgs` to an attrset, with the same fields as [in TOML](zandy.toml.md) plus `secrets` and `files`, for a tool without a login of its own:
+An adapter is a function from `pkgs` to an attrset, with the same fields as [in TOML](confine.toml.md) plus `secrets` and `files`, for a tool without a login of its own:
 
 ```nix
 say = pkgs: {
@@ -155,7 +155,7 @@ say = pkgs: {
 | `package` | The derivation the broker runs. Must not also be in `packages` |
 | `binary` | The program in `package/bin` |
 | `capabilities` | The methods: `name`, `description`, `params`, `argv` |
-| `env` | Env vars passed on from the shell that started zandy. Not for secrets |
+| `env` | Env vars passed on from the shell that started confine. Not for secrets |
 | `setEnv` | Env vars set for the command. `{dir}` is replaced with the adapter's private directory |
 | `secrets` | Where each secret lives, e.g. `secrets.ACME_TOKEN.keychain = { service = "acme-token"; }`. `store = "login"` reads the login keychain, `field` picks a path inside a JSON value |
 | `files` | Files the tool reads. `{secret.NAME}` is replaced with the secret. At most 4096 bytes in total |
@@ -164,7 +164,7 @@ In Nix a param can also be a `list`, which expands to several arguments, uncheck
 
 ## Catalogs
 
-`zandy.toml` names ports from a catalog: `zandy.lib.fromConfig { system, catalog, config }`. The template passes `ports.catalog`. A catalog has `presets`, `gateways` and `adapters`; each entry is:
+`confine.toml` names ports from a catalog: `confine.lib.fromConfig { system, catalog, config }`. The template passes `ports.catalog`. A catalog has `presets`, `gateways` and `adapters`; each entry is:
 
 | Field | Meaning |
 |---|---|

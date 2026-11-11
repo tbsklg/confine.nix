@@ -81,7 +81,7 @@ pub fn serveLoop(io: std.Io, gpa: std.mem.Allocator, server: *std.Io.net.Server,
 }
 
 pub fn sessionDirPath(buf: []u8, home: []const u8, pid: i32) ![]u8 {
-    return std.fmt.bufPrint(buf, "{s}/.zandy/run/{d}", .{ home, pid });
+    return std.fmt.bufPrint(buf, "{s}/.confine/run/{d}", .{ home, pid });
 }
 
 const test_ticket = "a" ** rpc.ticket_len;
@@ -289,7 +289,7 @@ test "line longer than max_line is rejected" {
 test "session dir is under home and named by pid" {
     var buf: [std.fs.max_path_bytes]u8 = undefined;
     const dir = try sessionDirPath(&buf, "/Users/test", 4242);
-    try std.testing.expectEqualStrings("/Users/test/.zandy/run/4242", dir);
+    try std.testing.expectEqualStrings("/Users/test/.confine/run/4242", dir);
 }
 
 test "socket dir creates missing parent dirs" {
@@ -300,11 +300,11 @@ test "socket dir creates missing parent dirs" {
     const len = try tmp.dir.realPath(std.testing.io, &dir_buf);
 
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const path = try std.fmt.bufPrint(&path_buf, "{s}/.zandy/run/4242", .{dir_buf[0..len]});
+    const path = try std.fmt.bufPrint(&path_buf, "{s}/.confine/run/4242", .{dir_buf[0..len]});
 
     try createSocketDir(std.testing.io, path);
 
-    const stat = try tmp.dir.statFile(std.testing.io, ".zandy/run/4242", .{});
+    const stat = try tmp.dir.statFile(std.testing.io, ".confine/run/4242", .{});
     try std.testing.expectEqual(.directory, stat.kind);
     try std.testing.expectEqual(0o700, stat.permissions.toMode() & 0o777);
 }

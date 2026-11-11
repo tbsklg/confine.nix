@@ -11,7 +11,7 @@ const Env = @import("env/env.zig");
 const SandboxEnv = @import("env/sandbox_env.zig");
 const Preset = @import("env/manifest.zig").Preset;
 
-const log = std.log.scoped(.zandy);
+const log = std.log.scoped(.confine);
 
 const Argv = [:null]const ?[*:0]const u8;
 const Parameters = [8:null]?[*:0]const u8;
@@ -25,7 +25,7 @@ pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []cons
 
     const session = std.c.getpid();
     const started = std.Io.Clock.awake.now(io);
-    const tag = try std.fmt.allocPrint(arena, "zandy-{d}", .{session});
+    const tag = try std.fmt.allocPrint(arena, "confine-{d}", .{session});
     log.info("session {d}: env {s}, preset {s}, cwd {s}", .{ session, sandbox_env.root.path, preset.name, env.cwd });
 
     const command = resolveCommand(arena, sandbox_env.bin, manifest.shell, user_args) catch |err| {

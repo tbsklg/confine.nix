@@ -336,7 +336,7 @@ test "write profile tags every denial with the message" {
     defer aw.deinit();
 
     const profile = Profile{
-        .message = "zandy-42",
+        .message = "confine-42",
         .rules = &.{
             Rule.allow(.process_exec, null),
             Rule.deny(.mach_lookup, .{ .global_name = "com.apple.SecurityServer" }),
@@ -346,9 +346,9 @@ test "write profile tags every denial with the message" {
 
     const expected =
         \\(version 1)
-        \\(deny default (with message "zandy-42"))
+        \\(deny default (with message "confine-42"))
         \\(allow process-exec)
-        \\(deny mach-lookup (global-name "com.apple.SecurityServer") (with message "zandy-42"))
+        \\(deny mach-lookup (global-name "com.apple.SecurityServer") (with message "confine-42"))
     ;
     try std.testing.expectEqualStrings(expected, aw.written());
 }

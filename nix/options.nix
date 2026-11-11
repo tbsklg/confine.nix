@@ -11,12 +11,12 @@ in
   options = {
     name = mkOption {
       type = types.strMatching "[a-z0-9-]+";
-      description = "Name of the sandbox env; the launcher becomes `bin/zandy-<name>`.";
+      description = "Name of the sandbox env; the launcher becomes `bin/confine-<name>`.";
       example = "claude";
     };
 
     preset = mkOption {
-      description = "The sandbox rules and packages an app needs, e.g. `ports.presets.claude` from zandy-ports.";
+      description = "The sandbox rules and packages an app needs, e.g. `ports.presets.claude` from confine-ports.";
       type = types.submodule {
         options = {
           name = mkOption { type = types.str; description = "Name of the preset."; };

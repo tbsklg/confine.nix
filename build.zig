@@ -22,7 +22,7 @@ pub fn build(b: *std.Build) void {
     // in this directory.
 
     const exe = b.addExecutable(.{
-        .name = "zandy",
+        .name = "confine",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -40,7 +40,7 @@ pub fn build(b: *std.Build) void {
 
     // The thin client that runs inside the sandbox and talks to the broker.
     const client_exe = b.addExecutable(.{
-        .name = "zandy-client",
+        .name = "confine-client",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/client.zig"),
             .target = target,
@@ -101,7 +101,7 @@ pub fn build(b: *std.Build) void {
 
     // Build-On-Save
     const exe_check = b.addExecutable(.{
-        .name = "zandy",
+        .name = "confine",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,
@@ -110,7 +110,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     addOsLog(b, exe_check.root_module);
-    const check = b.step("check", "Check if zandy compiles");
+    const check = b.step("check", "Check if confine compiles");
     check.dependOn(&exe_check.step);
 }
 

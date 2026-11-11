@@ -37,7 +37,7 @@ pub fn main(init: std.process.Init) !void {
         .secret => |service| return storeSecret(arena, io, envMap, service),
     };
     const sandbox_env = SandboxEnv.load(arena, io, env_path) catch |err| {
-        std.debug.print("zandy: --env '{s}' is not a sandbox env built by zandy.lib.mkSandboxEnv: {t}\n", .{ env_path, err });
+        std.debug.print("confine: --env '{s}' is not a sandbox env built by confine.lib.mkSandboxEnv: {t}\n", .{ env_path, err });
         std.process.exit(1);
     };
 
@@ -56,17 +56,17 @@ pub fn main(init: std.process.Init) !void {
 fn storeSecret(arena: std.mem.Allocator, io: std.Io, envMap: *std.process.Environ.Map, service: []const u8) !void {
     const home = envMap.get("HOME") orelse return error.NoHome;
     secret.set(arena, io, home, service) catch |err| {
-        std.debug.print("zandy: could not store '{s}': {t}\n", .{ service, err });
+        std.debug.print("confine: could not store '{s}': {t}\n", .{ service, err });
         std.process.exit(1);
     };
-    std.debug.print("zandy: stored '{s}' in {s}\n", .{ service, try secret.keychainPath(arena, home, .zandy) });
+    std.debug.print("confine: stored '{s}' in {s}\n", .{ service, try secret.keychainPath(arena, home, .confine) });
 }
 
 fn showConfig(arena: std.mem.Allocator, io: std.Io, sandbox_env: SandboxEnv) !void {
     const manifest = sandbox_env.manifest;
     const no_pipes = try arena.alloc([]const secret.Pipe, manifest.adapters.len);
     @memset(no_pipes, &.{});
-    const registry: registry_mod.Registry = .{ .capabilities = try registry_mod.parseAdapters(arena, manifest.adapters, no_pipes, "~/.zandy/run/<pid>") };
+    const registry: registry_mod.Registry = .{ .capabilities = try registry_mod.parseAdapters(arena, manifest.adapters, no_pipes, "~/.confine/run/<pid>") };
     const discovered = try std.json.parseFromSliceLeaky(std.json.Value, arena, try registry.discover(arena), .{});
 
     var buf: [4096]u8 = undefined;

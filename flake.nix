@@ -1,5 +1,5 @@
 {
-  description = "zandy";
+  description = "confine";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -8,7 +8,7 @@
       lib = import ./nix/lib.nix;
       system = "aarch64-darwin";
       pkgs = import nixpkgs { inherit system; };
-      inherit (lib.zandyFor pkgs) zig zandy zandy-client tests;
+      inherit (lib.confineFor pkgs) zig confine confine-client tests;
       config = import ./nix/config.nix { inherit nixpkgs; inherit (lib) mkSandboxEnv; };
     in
     {
@@ -20,12 +20,12 @@
 
       templates.default = {
         path = ./templates/default;
-        description = "A zandy env configured in zandy.toml, with zandy-ports plugged in";
+        description = "A confine env configured in confine.toml, with confine-ports plugged in";
       };
 
       packages.${system} = {
-        inherit zandy zandy-client;
-        default = zandy;
+        inherit confine confine-client;
+        default = confine;
         options-doc = (pkgs.nixosOptionsDoc {
           options = builtins.removeAttrs (pkgs.lib.evalModules { modules = [ ./nix/options.nix ]; }).options [ "_module" ];
           transformOptions = opt: opt // { declarations = [ ]; };

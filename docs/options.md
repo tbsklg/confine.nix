@@ -171,7 +171,7 @@ ports.gateways.bedrock { profile = "acme-bedrock"; region = "eu-west-1"; }
 
 
 
-Name of the sandbox env; the launcher becomes ` bin/zandy-<name> `\.
+Name of the sandbox env; the launcher becomes ` bin/confine-<name> `\.
 
 
 
@@ -192,7 +192,7 @@ string matching the pattern \[a-z0-9-]+
 
 
 
-The sandbox rules and packages an app needs, e\.g\. ` ports.presets.claude ` from zandy-ports\.
+The sandbox rules and packages an app needs, e\.g\. ` ports.presets.claude ` from confine-ports\.
 
 
 

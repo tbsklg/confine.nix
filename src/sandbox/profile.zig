@@ -131,7 +131,7 @@ test "flake.nix and flake.lock in the project stay read-only even when the user 
     try std.testing.expect(allow < deny_lock);
 }
 
-test "zandy's secrets and the keychain stay closed even when the user allows reading HOME" {
+test "confine's secrets and the keychain stay closed even when the user allows reading HOME" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
@@ -144,11 +144,11 @@ test "zandy's secrets and the keychain stay closed even when the user allows rea
     const written = aw.written();
 
     const allow = std.mem.indexOf(u8, written, "(allow file-read* (subpath \"/Users/acme\"))").?;
-    const deny_zandy = std.mem.indexOf(u8, written, "(deny file-read-data (subpath (string-append (param \"HOME\") \"/.zandy\")))").?;
+    const deny_confine = std.mem.indexOf(u8, written, "(deny file-read-data (subpath (string-append (param \"HOME\") \"/.confine\")))").?;
     const deny_keychains = std.mem.indexOf(u8, written, "(deny file-read-data (subpath (string-append (param \"HOME\") \"/Library/Keychains\")))").?;
-    try std.testing.expect(allow < deny_zandy);
+    try std.testing.expect(allow < deny_confine);
     try std.testing.expect(allow < deny_keychains);
-    try std.testing.expect(std.mem.indexOf(u8, written, "(deny file-write* (subpath (string-append (param \"HOME\") \"/.zandy\")))") != null);
+    try std.testing.expect(std.mem.indexOf(u8, written, "(deny file-write* (subpath (string-append (param \"HOME\") \"/.confine\")))") != null);
 }
 
 test "a preset can't open the keychain services" {

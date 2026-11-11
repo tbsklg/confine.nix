@@ -1,5 +1,5 @@
 let
-  zandyFor = pkgs: import ./zandy.nix { inherit pkgs; };
+  confineFor = pkgs: import ./confine.nix { inherit pkgs; };
 
   mkSandboxEnv = { pkgs, ... }@args:
     let
@@ -9,7 +9,7 @@ let
         modules = [ ./options.nix (builtins.removeAttrs args [ "pkgs" ]) ];
       }).config;
       inherit (cfg) preset;
-      inherit (zandyFor pkgs) zandy zandy-client;
+      inherit (confineFor pkgs) confine confine-client;
 
       resolvedAdapters = map (adapter: adapter pkgs) cfg.adapters;
       gateway = if cfg.gateway == null then null else cfg.gateway pkgs;
@@ -21,7 +21,7 @@ let
         in
         lib.mapAttrsToList (name: value: { gateway = gateway.name; inherit name value; }) resolved;
 
-      sandboxPackages = preset.packages pkgs ++ [ zandy-client ] ++ cfg.packages;
+      sandboxPackages = preset.packages pkgs ++ [ confine-client ] ++ cfg.packages;
       clashes = builtins.filter (adapter: builtins.elem adapter.package sandboxPackages) resolvedAdapters;
 
       bin = pkgs.buildEnv {
@@ -56,37 +56,32 @@ let
       env = pkgs.linkFarm "${cfg.name}-env" [
         { name = "sandbox/bin"; path = "${bin}/bin"; }
         { name = "store-paths"; path = "${closure}/store-paths"; }
-        { name = "zandy.json"; path = (pkgs.formats.json { }).generate "zandy.json" manifest; }
+        { name = "confine.json"; path = (pkgs.formats.json { }).generate "confine.json" manifest; }
       ];
 
       label = lib.optionalString (preset.icon != "") "${preset.icon} " + cfg.name;
       backend = if gateway == null then "no gateway" else "gateway ${gateway.name}";
 
       launcher = pkgs.writeShellApplication {
-        name = "zandy-${cfg.name}";
+        name = "confine-${cfg.name}";
         text = ''
           if [ -t 2 ]; then
-            printf '%s\n' \
-              "" \
-              " ╔═╗╔═╗╔╗╔╔╦╗╦ ╦   ${label}" \
-              " ╔═╝╠═╣║║║ ║║╚╦╝   ''${PWD/#"$HOME"/\~}" \
-              " ╚═╝╩ ╩╝╚╝═╩╝ ╩    sandboxed · ${backend} · zandy ${zandy.version}" \
-              "" >&2
+            printf '%s\n' "${label} · ''${PWD/#"$HOME"/\~} · ${backend} · confine ${confine.version}" >&2
           fi
-          exec ${zandy}/bin/zandy --env ${env} "$@"
+          exec ${confine}/bin/confine --env ${env} "$@"
         '';
       };
     in
     assert lib.assertMsg pkgs.stdenv.hostPlatform.isDarwin
-      "zandy: macOS only, ${pkgs.stdenv.hostPlatform.system} is not supported";
+      "confine: macOS only, ${pkgs.stdenv.hostPlatform.system} is not supported";
     assert lib.assertMsg (clashes == [ ])
-      "zandy: ${lib.concatMapStringsSep ", " (adapter: adapter.name) clashes} adapter packages must not be in packages; the broker runs them outside the sandbox";
+      "confine: ${lib.concatMapStringsSep ", " (adapter: adapter.name) clashes} adapter packages must not be in packages; the broker runs them outside the sandbox";
     pkgs.symlinkJoin {
       name = cfg.name;
       paths = [ env launcher ];
-      meta.mainProgram = "zandy-${cfg.name}";
+      meta.mainProgram = "confine-${cfg.name}";
     };
 in
 {
-  inherit mkSandboxEnv zandyFor;
+  inherit mkSandboxEnv confineFor;
 }

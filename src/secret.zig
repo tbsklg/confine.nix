@@ -4,14 +4,14 @@ const macos = @import("macos.zig");
 const log = std.log.scoped(.broker);
 
 pub const Store = enum {
-    zandy,
+    confine,
     login,
 };
 
 pub const Keychain = struct {
     service: []const u8,
     field: []const []const u8 = &.{},
-    store: Store = .zandy,
+    store: Store = .confine,
 };
 
 pub const Source = union(enum) {
@@ -25,7 +25,7 @@ const security = "/usr/bin/security";
 
 pub fn keychainPath(arena: std.mem.Allocator, home: []const u8, store: Store) ![]const u8 {
     return std.fs.path.join(arena, &.{ home, switch (store) {
-        .zandy => ".zandy/zandy.keychain-db",
+        .confine => ".confine/confine.keychain-db",
         .login => "Library/Keychains/login.keychain-db",
     } });
 }
@@ -147,8 +147,8 @@ fn readKeychain(arena: std.mem.Allocator, io: std.Io, home: []const u8, keychain
     };
     if (!found) {
         switch (keychain.store) {
-            .zandy => std.debug.print("zandy: no secret '{s}' in {s}; store it with `zandy-<name> --zandy-secret {s}`\n", .{ keychain.service, path, keychain.service }),
-            .login => std.debug.print("zandy: no item '{s}' in the login keychain\n", .{keychain.service}),
+            .confine => std.debug.print("confine: no secret '{s}' in {s}; store it with `confine-<name> --confine-secret {s}`\n", .{ keychain.service, path, keychain.service }),
+            .login => std.debug.print("confine: no item '{s}' in the login keychain\n", .{keychain.service}),
         }
         return error.NoKeychainItem;
     }
@@ -187,10 +187,10 @@ pub fn render(arena: std.mem.Allocator, template: []const u8, names: []const []c
 
 pub fn set(arena: std.mem.Allocator, io: std.Io, home: []const u8, service: []const u8) !void {
     const quoted_service = try parseQuotable(service);
-    const path = try keychainPath(arena, home, .zandy);
+    const path = try keychainPath(arena, home, .confine);
     std.Io.Dir.cwd().access(io, path, .{}) catch |err| switch (err) {
         error.FileNotFound => {
-            std.debug.print("zandy: no keychain at {s}; create it once with\n  security create-keychain {s}\n  security set-keychain-settings {s}\n", .{ path, path, path });
+            std.debug.print("confine: no keychain at {s}; create it once with\n  security create-keychain {s}\n  security set-keychain-settings {s}\n", .{ path, path, path });
             return error.NoKeychain;
         },
         else => return err,
@@ -200,7 +200,7 @@ pub fn set(arena: std.mem.Allocator, io: std.Io, home: []const u8, service: []co
     var child = try std.process.spawn(io, .{ .argv = &.{ security, "-i" }, .stdin = .pipe, .stdout = .ignore });
     var buf: [256]u8 = undefined;
     var writer = child.stdin.?.writer(io, &buf);
-    try writer.interface.print("add-generic-password -U -a zandy -s \"{s}\" -w \"{s}\" \"{s}\"\n", .{ quoted_service, value, path });
+    try writer.interface.print("add-generic-password -U -a confine -s \"{s}\" -w \"{s}\" \"{s}\"\n", .{ quoted_service, value, path });
     try writer.interface.flush();
     child.stdin.?.close(io);
     child.stdin = null;
@@ -243,16 +243,16 @@ fn prompt(arena: std.mem.Allocator, io: std.Io, service: []const u8) ![]const u8
     return arena.dupe(u8, line);
 }
 
-test "keychainPath names the zandy and the login keychain" {
+test "keychainPath names the confine and the login keychain" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
 
-    try std.testing.expectEqualStrings("/Users/acme/.zandy/zandy.keychain-db", try keychainPath(arena, "/Users/acme", .zandy));
+    try std.testing.expectEqualStrings("/Users/acme/.confine/confine.keychain-db", try keychainPath(arena, "/Users/acme", .confine));
     try std.testing.expectEqualStrings("/Users/acme/Library/Keychains/login.keychain-db", try keychainPath(arena, "/Users/acme", .login));
 }
 
-test "parses keychain sources with zandy as the default store" {
+test "parses keychain sources with confine as the default store" {
     var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_state.deinit();
 
@@ -261,7 +261,7 @@ test "parses keychain sources with zandy as the default store" {
         \\ "TOKEN":{"keychain":{"service":"Claude Code-credentials","store":"login","field":["claudeAiOauth","accessToken"]}}}
     , .{});
     const gitlab = sources.map.get("GITLAB_TOKEN").?.keychain;
-    try std.testing.expectEqual(.zandy, gitlab.store);
+    try std.testing.expectEqual(.confine, gitlab.store);
     try std.testing.expectEqual(0, gitlab.field.len);
     const claude = sources.map.get("TOKEN").?.keychain;
     try std.testing.expectEqual(.login, claude.store);
