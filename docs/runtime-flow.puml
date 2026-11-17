@@ -18,6 +18,7 @@ participant "command\nsandbox/bin/<command>, or the shell" as Bin
 participant "confine-client" as Client
 participant "adapter binary\n/nix/store/…" as Tool
 participant "gateway proxy\ncaddy / aws-sigv4-proxy" as Gateway
+participant "forward proxy\nproxy/server" as Proxy
 
 User -> Launcher : confine-dev [command [args]]  (or nix run)
 Launcher -> Main : exec confine --env <env> [args]
@@ -38,9 +39,10 @@ Profile --> Main : sbpl.Profile (preset rules + exec/read per store path + files
 
 Main -> Launch : launch(init, sandbox_env, args, profile, env)
 Launch -> Gateway : start(argv, env + CONFINE_GATEWAY_PORT), wait until listening
-Launch -> Launch : serialize(profile + allow localhost:<gateway port>) → SBPL text
+Launch -> Proxy : listen(127.0.0.1:0) → proxy port
+Launch -> Launch : serialize(profile + allow localhost:<proxy port>, localhost:<gateway port>) → SBPL text
 Launch -> Broker : listen(BROKER_SOCK)
-Launch -> Launch : sandbox Environ.Map (preset env names + PATH, SHELL, BROKER_SOCK, BROKER_TICKET, gatewayEnv with {url})
+Launch -> Launch : sandbox Environ.Map (preset env names + PATH, SHELL, BROKER_SOCK, BROKER_TICKET, HTTPS_PROXY, NO_PROXY, gatewayEnv with {url})
 Launch -> Registry : parseAdapters(manifest.adapters)
 Registry --> Launch : []Capability
 
@@ -54,6 +56,7 @@ end
 
 group parent process
   Launch -> Broker : serveLoop (thread)
+  Launch -> Proxy : serve (thread, a task per tunnel)
   Launch -> Launch : waitpid(child)
   Launch -> Gateway : stop
 end

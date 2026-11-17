@@ -9,6 +9,8 @@ nix flake check                 # the same tests, built and run by Nix
 
 `tests/run-probe.sh` runs the sandbox probe on this machine.
 
+`tester/run.sh <stage|all>` drives the forward proxy from outside: it builds `zig build proxy`, starts `zig-out/bin/confine-proxy --port <n>` and checks it stage by stage, from binding a port to real `curl` traffic.
+
 To try a local checkout in your env, override its `confine` input:
 
 ```sh
