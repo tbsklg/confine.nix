@@ -9,28 +9,28 @@ confine logs to the macOS unified log under the subsystem `tbsklg.confine`, with
 
 Each operation the sandbox blocks is logged by macOS itself and tagged `confine-<pid>`, where `<pid>` is the session in the first `confine` line. The log holds no params, output or secret values, except the first stderr line of a failed command at `debug` level, which macOS doesn't keep on disk. The program can't read it. To see the full Seatbelt profile, run `confine-<name> --confine-config`.
 
-Open a second terminal and run one of the following commands. In zsh, `log` is a shell builtin; run `/usr/bin/log` instead.
+Open a second terminal and run one of the following commands.
 
 ```sh
-log stream --level debug --predicate 'subsystem == "tbsklg.confine" OR (senderImagePath ENDSWITH "/Sandbox" AND eventMessage CONTAINS "\nconfine-")'
+/usr/bin/log stream --level debug --predicate 'subsystem == "tbsklg.confine" OR (senderImagePath ENDSWITH "/Sandbox" AND eventMessage CONTAINS "\nconfine-")'
 ```
 
 To follow one session:
 
 ```sh
-log stream --level debug --predicate '(subsystem == "tbsklg.confine" AND processID == <pid>) OR (senderImagePath ENDSWITH "/Sandbox" AND eventMessage MATCHES "(?s).*\nconfine-<pid>([^0-9].*)?")'
+/usr/bin/log stream --level debug --predicate '(subsystem == "tbsklg.confine" AND processID == <pid>) OR (senderImagePath ENDSWITH "/Sandbox" AND eventMessage MATCHES "(?s).*\nconfine-<pid>([^0-9].*)?")'
 ```
 
 To follow one scope:
 
 ```sh
-log stream --level debug --predicate 'subsystem == "tbsklg.confine" AND category == "broker"'
+/usr/bin/log stream --level debug --predicate 'subsystem == "tbsklg.confine" AND category == "broker"'
 ```
 
 Or look back at past sessions. macOS keeps everything except `debug` on disk for a few days:
 
 ```sh
-log show --last 1h --predicate 'subsystem == "tbsklg.confine" OR (senderImagePath ENDSWITH "/Sandbox" AND eventMessage CONTAINS "\nconfine-")'
+/usr/bin/log show --last 1h --predicate 'subsystem == "tbsklg.confine" OR (senderImagePath ENDSWITH "/Sandbox" AND eventMessage CONTAINS "\nconfine-")'
 ```
 
 ## Where the program connects
@@ -38,13 +38,13 @@ log show --last 1h --predicate 'subsystem == "tbsklg.confine" OR (senderImagePat
 The program's HTTPS goes through confine's proxy, which logs each tunnel under the `proxy` category. To follow it live:
 
 ```sh
-log stream --level debug --predicate 'subsystem == "tbsklg.confine" AND category == "proxy"'
+/usr/bin/log stream --level debug --predicate 'subsystem == "tbsklg.confine" AND category == "proxy"'
 ```
 
 To look back:
 
 ```sh
-log show --last 1h --predicate 'subsystem == "tbsklg.confine" AND category == "proxy"'
+/usr/bin/log show --last 1h --predicate 'subsystem == "tbsklg.confine" AND category == "proxy"'
 ```
 
 A tunnel is logged when it opens and when it closes:
