@@ -2,7 +2,7 @@
 
 Newest first. What you have to do after an update is in [upgrade notes](docs/upgrade.md).
 
-## 0.1.0, unreleased
+## 0.1.0, 2026-11-23
 
 ### 2026-11-17: a proxy to see the network
 
