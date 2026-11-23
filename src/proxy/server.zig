@@ -11,13 +11,21 @@ pub fn listen(io: std.Io, port: u16) !std.Io.net.Server {
 
 const log = std.log.scoped(.proxy);
 
+const accept_retry_delay: std.Io.Duration = .fromMilliseconds(100);
+
 pub fn serve(io: std.Io, server: *std.Io.net.Server) !void {
-    // Tunnels live for minutes, so each connection gets its own task; finished tasks free themselves.
     var tunnels: std.Io.Group = .init;
     defer tunnels.cancel(io);
 
     while (true) {
-        const conn = try server.accept(io);
+        const conn = server.accept(io) catch |err| switch (err) {
+            error.Canceled, error.SocketNotListening => return err,
+            else => {
+                log.warn("accept: {t}", .{err});
+                try io.sleep(accept_retry_delay, .awake);
+                continue;
+            },
+        };
         tunnels.concurrent(io, tunnel, .{ io, conn }) catch |err| {
             log.warn("{t}", .{err});
             conn.close(io);
@@ -25,15 +33,14 @@ pub fn serve(io: std.Io, server: *std.Io.net.Server) !void {
     }
 }
 
-/// How long a client has to send its request head before the proxy hangs up.
+const max_head_len = 8 * 1024;
 const head_timeout: std.Io.Duration = .fromSeconds(10);
 
 fn tunnel(io: std.Io, conn: std.Io.net.Stream) void {
     defer conn.close(io);
     const started = std.Io.Clock.awake.now(io);
 
-    // The head must fit in this buffer: a longer one is answered with 431.
-    var reader_buf: [8 * 1024]u8 = undefined;
+    var reader_buf: [max_head_len]u8 = undefined;
     var writer_buf: [1024]u8 = undefined;
 
     var reader = conn.reader(io, &reader_buf);
@@ -96,13 +103,11 @@ fn tunnel(io: std.Io, conn: std.Io.net.Stream) void {
     log.info("CONNECT {s}:{d} closed, sent {d}, received {d} bytes, {d}ms", .{ target.host, target.port, sent, received, elapsed(io, started) });
 }
 
-/// Shuts the connection down once `duration` has passed, unless canceled first.
 fn hangUpAfter(io: std.Io, conn: std.Io.net.Stream, duration: std.Io.Duration) void {
     io.sleep(duration, .awake) catch return;
     conn.shutdown(io, .both) catch {};
 }
 
-/// Writes the status line of the answer to the client. Only a 200 keeps the connection: it becomes the tunnel.
 fn reply(w: *std.Io.Writer, status: std.http.Status) void {
     const written = if (status == .ok)
         // A 2xx answer to CONNECT has no body and no Content-Length.
@@ -117,8 +122,6 @@ fn elapsed(io: std.Io, started: std.Io.Timestamp) i64 {
     return started.untilNow(io, .awake).toMilliseconds();
 }
 
-/// Copies `from` into `to` until `from` ends or either side fails, then tells the peer
-/// behind `to` that nothing more comes. Returns the number of bytes copied.
 fn pipe(io: std.Io, from: *std.Io.Reader, to: *std.Io.Writer, to_stream: std.Io.net.Stream) usize {
     defer to_stream.shutdown(io, .send) catch {};
 

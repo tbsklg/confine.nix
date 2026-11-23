@@ -172,4 +172,5 @@ cd ~/code/your-project && confine-your-project claude
 | `NameTooLong` at start | `$HOME` is too long: `~/.confine/run/<pid>/broker.sock` must fit in 104 bytes |
 | Info lines on stderr at start | The gateway starting, e.g. `aws-sigv4-proxy`. Harmless |
 | A tool's connections are missing from the proxy log | It ignores `HTTPS_PROXY`; see its docs for a proxy setting |
+| A tool fails only through the proxy | Run it with `env -u HTTPS_PROXY -u https_proxy <tool>`; it then connects directly, as far as the preset allows, and isn't logged |
 | A problem with one program | See its preset's README in [confine-ports](https://github.com/tbsklg/confine-ports) |

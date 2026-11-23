@@ -8,8 +8,8 @@ const Args = struct {
 pub fn main(init: std.process.Init) !void {
     const args = try parseArgs(init.minimal.args);
 
-    var _server = try server.listen(init.io, args.port);
-    try server.serve(init.io, &_server);
+    var listener = try server.listen(init.io, args.port);
+    try server.serve(init.io, &listener);
 }
 
 fn parseArgs(args: std.process.Args) !Args {
@@ -18,7 +18,7 @@ fn parseArgs(args: std.process.Args) !Args {
 
     const port: u16 = while (iter.next()) |arg| {
         if (std.mem.eql(u8, "--port", arg)) {
-            const port = iter.next().?;
+            const port = iter.next() orelse return error.NoPortProvided;
             break try std.fmt.parseInt(u16, port, 10);
         }
     } else return error.NoPortProvided;

@@ -42,7 +42,7 @@ proxy_log="$(mktemp)"
 "$bin" --port "$PORT" 2>"$proxy_log" &
 proxy_pid=$!
 cleanup_pids=()
-trap 'kill "$proxy_pid" "${cleanup_pids[@]}" 2>/dev/null; wait "$proxy_pid" 2>/dev/null; rm -f "$proxy_log"' EXIT
+trap 'kill "$proxy_pid" ${cleanup_pids[@]+"${cleanup_pids[@]}"} 2>/dev/null; wait "$proxy_pid" 2>/dev/null; rm -f "$proxy_log"' EXIT
 
 for _ in $(seq 30); do
   nc -z 127.0.0.1 "$PORT" 2>/dev/null && break
