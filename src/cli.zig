@@ -5,6 +5,8 @@ pub const Command = union(enum) {
     config: []const u8,
     secret: []const u8,
     init: []const u8,
+    update: []const u8,
+    apply: []const u8,
 };
 
 pub const Launch = struct {
@@ -23,6 +25,14 @@ pub fn parseArgs(args: []const [:0]const u8) !Command {
         if (args.len > 3) return error.TooManyArgs;
         return .{ .init = if (args.len == 3) args[2] else @import("init.zig").default_name };
     }
+    if (std.mem.eql(u8, args[1], "update")) {
+        if (args.len > 3) return error.TooManyArgs;
+        return .{ .update = if (args.len == 3) args[2] else @import("init.zig").default_name };
+    }
+    if (std.mem.eql(u8, args[1], "apply")) {
+        if (args.len > 3) return error.TooManyArgs;
+        return .{ .apply = if (args.len == 3) args[2] else @import("init.zig").default_name };
+    }
     if (std.mem.eql(u8, args[1], "config")) {
         if (args.len != 4 or !std.mem.eql(u8, args[2], "--env")) return error.NoEnv;
         return .{ .config = args[3] };
@@ -37,6 +47,8 @@ pub fn parseArgs(args: []const [:0]const u8) !Command {
 
 pub const usage =
     \\usage: confine init [name]            create ~/.confine/envs/<name> and install confine-<name>
+    \\       confine apply [name]           install the env as its confine.toml says now
+    \\       confine update [name]          pull newer confine and ports into the env and upgrade it
     \\                                   name defaults to dev
     \\       confine --env <drv> [args...]
     \\       confine config --env <drv>    show the manifest and the methods the agent sees
@@ -66,6 +78,12 @@ test "returns error when init has more than a name" {
     const args = [_][:0]const u8{ "confine", "init", "work", "extra" };
 
     try std.testing.expectError(error.TooManyArgs, parseArgs(&args));
+}
+
+test "returns update with dev as the default name" {
+    const args = [_][:0]const u8{ "confine", "update" };
+
+    try std.testing.expectEqualStrings("dev", (try parseArgs(&args)).update);
 }
 
 test "returns error when --env is missing" {

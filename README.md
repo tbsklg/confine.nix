@@ -35,7 +35,7 @@ preset = "shell"
 packages = ["gnumake"]
 ```
 
-After editing it, run `nix profile upgrade --all`. Until then, `confine-dev` keeps using the sandbox you installed. Then run the program: `confine-dev make test`.
+After editing it, run `confine apply`. Until then, `confine-dev` keeps using the sandbox you installed. Then run the program: `confine-dev make test`.
 
 For a coding agent, use its preset and a gateway for its API; see [Reach an API](docs/README.md#reach-an-api) and the [examples](docs/confine.toml.md#examples).
 

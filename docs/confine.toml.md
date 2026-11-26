@@ -34,7 +34,7 @@ denyWrite = ["<path>", …]
 
 ## Description
 
-`confine.toml` lies next to the env's `flake.nix`, in `~/.confine/envs/<name>/`, and is read when the env is built. Changes take effect at the next `nix profile upgrade`, never while an env runs.
+`confine.toml` lies next to the env's `flake.nix`, in `~/.confine/envs/<name>/`, and is read when the env is built. Changes take effect at the next `confine apply`, never while an env runs.
 
 Presets, gateways and adapters are named from the catalog, `ports.catalog` from [confine-ports](https://github.com/tbsklg/confine-ports) by default. Their tables hold their arguments; each port's README lists them.
 
@@ -62,7 +62,7 @@ An unknown key, name or argument fails the build and names it.
 ## Files
 
 - `flake.nix`: Reads `confine.toml`. Not edited.
-- `confine.schema.json`: Built with `nix build .#schema -o confine.schema.json`. Editors that read the `#:schema` line use it for completion and checks. It matches the pinned confine and ports; rebuild it after `nix flake update`.
+- `confine.schema.json`: Built with `nix build .#schema -o confine.schema.json`. Editors that read the `#:schema` line use it for completion and checks. It matches the pinned confine and ports; `confine update` rebuilds it.
 
 ## Examples
 
