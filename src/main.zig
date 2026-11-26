@@ -5,6 +5,7 @@ const registry_mod = @import("broker/registry.zig");
 const cli = @import("cli.zig");
 const secret = @import("secret.zig");
 const init_mod = @import("init.zig");
+const update_mod = @import("update.zig");
 const log = @import("log.zig");
 
 const Env = @import("env/env.zig");
@@ -37,6 +38,8 @@ pub fn main(init: std.process.Init) !void {
         .config => |env_path| env_path,
         .secret => |service| return storeSecret(arena, io, envMap, service),
         .init => |name| return init_mod.run(arena, io, envMap, name),
+        .update => |name| return update_mod.run(arena, io, envMap, name),
+        .apply => |name| return update_mod.apply(arena, io, envMap, name),
     };
     const sandbox_env = SandboxEnv.load(arena, io, env_path) catch |err| {
         std.debug.print("confine: --env '{s}' is not a sandbox env built by confine.lib.mkSandboxEnv: {t}\n", .{ env_path, err });
@@ -46,7 +49,7 @@ pub fn main(init: std.process.Init) !void {
     const launch = switch (command) {
         .launch => |launch| launch,
         .config => return showConfig(arena, io, sandbox_env),
-        .secret, .init => unreachable,
+        .secret, .init, .update, .apply => unreachable,
     };
 
     const env = try Env.init(arena, io, envMap);

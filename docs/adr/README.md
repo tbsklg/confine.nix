@@ -21,3 +21,4 @@ Why confine works the way it does, one decision per record. A record is never re
 17. [The proxy only logs](0017-the-proxy-only-logs.md)
 18. [The installer requires Nix and doesn't install it](0018-the-installer-requires-nix.md)
 19. [Release notes and ADRs instead of a changelog](0019-release-notes-and-adrs.md)
+20. [Update and apply are separate commands](0020-update-and-apply-are-separate.md)

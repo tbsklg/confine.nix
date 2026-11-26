@@ -130,17 +130,12 @@ allowRead = ["~/notes"]
 
 ## Change and update
 
-After editing `confine.toml`, upgrade. Until then, the installed env runs unchanged:
-
 ```sh
-cd ~/.confine/envs/dev && nix profile upgrade --all
+confine apply [name]     # after editing confine.toml; until then the installed env runs unchanged
+confine update [name]    # newer confine and ports; see the release notes it links
 ```
 
-To pull the latest confine and ports, then check the [release notes](release-notes/README.md):
-
-```sh
-nix flake update && nix build .#schema -o confine.schema.json && nix profile upgrade --all
-```
+`update` refuses while `confine.toml` has changes that aren't applied, so a policy change never comes in with an update.
 
 `nix run ~/.confine/envs/dev` builds and runs the env as it is right now, without installing. Use it only to try out a change.
 
@@ -150,7 +145,7 @@ If a project needs its own toolchain, give it its own env with the tools in `pac
 
 ```sh
 confine init your-project
-# set packages in ~/.confine/envs/your-project/confine.toml, then nix profile upgrade --all
+# set packages in ~/.confine/envs/your-project/confine.toml, then confine apply your-project
 cd ~/code/your-project && confine-your-project make test
 ```
 

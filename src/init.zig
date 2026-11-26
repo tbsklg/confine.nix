@@ -30,9 +30,9 @@ pub fn run(arena: std.mem.Allocator, io: std.Io, environ: *std.process.Environ.M
         \\  cd your-project && confine-{s}
         \\
         \\opens a shell in the sandbox. Add what your program needs to packages in
-        \\{s}/confine.toml, then run `nix profile upgrade --all`.
+        \\{s}/confine.toml, then run `confine apply {s}`.
         \\
-    , .{ name, name, shown });
+    , .{ name, name, shown, name });
 }
 
 fn write(arena: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, name: []const u8) !void {
@@ -40,7 +40,7 @@ fn write(arena: std.mem.Allocator, io: std.Io, dir: std.Io.Dir, name: []const u8
     try dir.writeFile(io, .{ .sub_path = "confine.toml", .data = try configFor(arena, name) });
 }
 
-fn nix(io: std.Io, dir: std.Io.Dir, argv: []const []const u8) !void {
+pub fn nix(io: std.Io, dir: std.Io.Dir, argv: []const []const u8) !void {
     var child = std.process.spawn(io, .{ .argv = argv, .cwd = .{ .dir = dir }, .stdin = .ignore }) catch |err| switch (err) {
         error.FileNotFound => return error.NixNotFound,
         else => return err,
@@ -50,7 +50,7 @@ fn nix(io: std.Io, dir: std.Io.Dir, argv: []const []const u8) !void {
 }
 
 /// Nix renamed `profile install` to `profile add`; the old name warns on new Nix and the new one fails on old Nix.
-fn profileAdd(io: std.Io) []const u8 {
+pub fn profileAdd(io: std.Io) []const u8 {
     var child = std.process.spawn(io, .{ .argv = &.{ "nix", "profile", "add", "--help" }, .stdin = .ignore, .stdout = .ignore, .stderr = .ignore }) catch return "install";
     const term = child.wait(io) catch return "install";
     return if (term == .exited and term.exited == 0) "add" else "install";
@@ -65,7 +65,7 @@ fn undo(io: std.Io, path: []const u8, err: anyerror) !void {
     }
 }
 
-fn fail(comptime format: []const u8, args: anytype) noreturn {
+pub fn fail(comptime format: []const u8, args: anytype) noreturn {
     std.debug.print("confine: " ++ format ++ "\n", args);
     std.process.exit(1);
 }
@@ -76,7 +76,7 @@ fn configFor(arena: std.mem.Allocator, name: []const u8) ![]const u8 {
 }
 
 /// The name becomes a directory and the launcher `confine-<name>`.
-fn validName(name: []const u8) bool {
+pub fn validName(name: []const u8) bool {
     if (name.len == 0 or name[0] == '-') return false;
     for (name) |c| switch (c) {
         'a'...'z', '0'...'9', '-' => {},
