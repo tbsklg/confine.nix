@@ -13,9 +13,8 @@ This reduces what the program can reach, but it is not a complete isolation boun
 This sets up Claude Code as the program. You need [Nix](https://nixos.org/download) with flakes, and a Claude login: run `claude` once outside confine and log in.
 
 ```sh
-mkdir -p ~/.confine/envs/dev && cd ~/.confine/envs/dev
-nix flake init -t github:tbsklg/confine.nix
-nix profile add .
+nix profile install github:tbsklg/confine.nix
+confine init
 ```
 
 Then, in a project:
@@ -41,10 +40,9 @@ After editing it, run `nix profile upgrade --all`. Until then, `confine-dev` kee
 
 - [Using confine](docs/README.md): set up, reach an API, give the program tools, update, security limits, troubleshooting
 - Reference: [confine.toml](docs/confine.toml.md), [confine](docs/confine.md), [confine-client](docs/confine-client.md), [debug log](docs/logging.md)
-- [Upgrade notes](docs/upgrade.md): what to change after an update
 - [confine in Nix](docs/nix.md): your own presets, gateways and catalogs
-- [Design](docs/design.md): why the sandbox is built outside the project
-- [Changelog](CHANGELOG.md): what changed, and why
+- [Release notes](docs/release-notes/README.md): what changed in each version, and what to change after an update
+- [Architecture decisions](docs/adr/README.md): why confine works the way it does
 - [Development](docs/development.md)
 
 Presets, gateways and adapters come from [confine-ports](https://github.com/tbsklg/confine-ports).

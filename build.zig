@@ -21,6 +21,9 @@ pub fn build(b: *std.Build) void {
     // target and optimize options) will be listed when running `zig build --help`
     // in this directory.
 
+    // The env template `confine init` writes; it lives outside src/ so `nix flake init -t` can use it too.
+    const template = b.createModule(.{ .root_source_file = b.path("templates/template.zig") });
+
     const exe = b.addExecutable(.{
         .name = "confine",
         .root_module = b.createModule(.{
@@ -31,6 +34,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     addOsLog(b, exe.root_module);
+    exe.root_module.addImport("template", template);
 
     // This declares intent for the executable to be installed into the
     // install prefix when running `zig build` (i.e. when executing the default
@@ -85,6 +89,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    tests.root_module.addImport("template", template);
     test_step.dependOn(&b.addRunArtifact(tests).step);
 
     // Just like flags, top level steps are also listed in the `--help` menu.
@@ -110,6 +115,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     addOsLog(b, exe_check.root_module);
+    exe_check.root_module.addImport("template", template);
     const check = b.step("check", "Check if confine compiles");
     check.dependOn(&exe_check.step);
 }

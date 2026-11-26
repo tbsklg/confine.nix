@@ -3,6 +3,7 @@ test {
     _ = @import("sandbox/sbpl.zig");
     _ = @import("sandbox/profile.zig");
     _ = @import("cli.zig");
+    _ = @import("init.zig");
     _ = @import("launch.zig");
     _ = @import("env/env.zig");
     _ = @import("macos.zig");

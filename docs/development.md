@@ -18,6 +18,6 @@ nix run --override-input confine path:$HOME/code/confine ~/.confine/envs/dev
 
 Use `path:`, not a plain path: a plain path is read as a git repo and leaves out untracked files. `path:` copies the whole directory into the store, so delete `.zig-cache` first.
 
-A change ships with its docs, in the same commit: the reference page of what it changes, and an entry in [upgrade.md](upgrade.md) if users have to act. Reference pages keep the same sections, in this order: synopsis, description, environment, files, exit status, examples, see also, caveats; leave out what doesn't apply.
+A change ships with its docs, in the same commit: the reference page of what it changes, and an entry in the next version's [release notes](release-notes/README.md), under Deprecations if users have to act. A change that is a decision also gets an [ADR](adr/README.md). Reference pages keep the same sections, in this order: synopsis, description, environment, files, exit status, examples, see also, caveats; leave out what doesn't apply.
 
 `docs/options.md` is generated with `nix build .#options-doc`. The launch sequence is in [runtime-flow.puml](runtime-flow.puml). Planned work is in [TODO.md](https://github.com/tbsklg/confine.nix/blob/main/TODO.md).
