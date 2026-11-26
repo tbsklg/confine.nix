@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/tbsklg/confine.nix/actions/workflows/sandbox.yml/badge.svg)](https://github.com/tbsklg/confine.nix/actions/workflows/sandbox.yml) [![version](https://img.shields.io/github/v/tag/tbsklg/confine.nix?sort=semver&label=version)](https://tbsklg.github.io/confine.nix/release-notes/)
 
-A sandbox for any command-line program on macOS: a coding agent, a test runner, an install script you don't trust.
+Run any command-line program on macOS as a minimally privileged application, with capabilities you grant explicitly and declaratively: a coding agent, a test runner, an install script you don't trust.
 
 You write a `confine.toml`: which program runs, which tools it may use and which API it may reach. confine starts the program under a Seatbelt profile that denies everything else. Your credentials stay outside the sandbox: a gateway adds an API's key, and a broker runs your tools with their own logins.
 
