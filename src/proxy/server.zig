@@ -71,7 +71,6 @@ fn tunnel(io: std.Io, conn: std.Io.net.Stream) void {
         log.info("CONNECT 400 {t}, {d}ms", .{ err, elapsed(io, started) });
         return;
     };
-    // The head lives in reader_buf, which the tunnel's bytes overwrite, so the host is copied out.
     var host_buf: [max_host_len]u8 = undefined;
     const target: Target = .{ .host = host_buf[0..parsed.host.len], .port = parsed.port };
     @memcpy(host_buf[0..parsed.host.len], parsed.host);
@@ -83,7 +82,6 @@ fn tunnel(io: std.Io, conn: std.Io.net.Stream) void {
     };
     defer upstream.close(io);
     reply(&writer.interface, .ok);
-    // Logged now as well as at the end, so a tunnel still open when confine exits is on record too.
     log.info("CONNECT {s}:{d} 200, {d}ms", .{ target.host, target.port, elapsed(io, started) });
 
     var upstream_reader_buf: [16 * 1024]u8 = undefined;
@@ -92,7 +90,6 @@ fn tunnel(io: std.Io, conn: std.Io.net.Stream) void {
     var upstream_reader = upstream.reader(io, &upstream_reader_buf);
     var upstream_writer = upstream.writer(io, &upstream_writer_buf);
 
-    // Both directions must run at the same time: either side may speak first, or never.
     var sending = io.concurrent(pipe, .{ io, &reader.interface, &upstream_writer.interface, upstream }) catch |err| {
         log.warn("{t}", .{err});
         return;
@@ -110,7 +107,6 @@ fn hangUpAfter(io: std.Io, conn: std.Io.net.Stream, duration: std.Io.Duration) v
 
 fn reply(w: *std.Io.Writer, status: std.http.Status) void {
     const written = if (status == .ok)
-        // A 2xx answer to CONNECT has no body and no Content-Length.
         w.writeAll("HTTP/1.1 200 Connection Established\r\n\r\n")
     else
         w.print("HTTP/1.1 {d} {s}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n", .{ @intFromEnum(status), status.phrase() orelse "" });
@@ -127,7 +123,6 @@ fn pipe(io: std.Io, from: *std.Io.Reader, to: *std.Io.Writer, to_stream: std.Io.
 
     var total: usize = 0;
     while (true) {
-        // A reset or failed write ends the tunnel the same way a close does.
         total += from.stream(to, .unlimited) catch return total;
         to.flush() catch return total;
     }
@@ -141,7 +136,6 @@ fn dial(io: std.Io, target: Target) !std.Io.net.Stream {
     return host.connect(io, target.port, .{ .mode = .stream });
 }
 
-/// The longest DNS name; an IPv6 address is shorter.
 const max_host_len = 255;
 
 pub const Target = struct {
