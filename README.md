@@ -13,9 +13,8 @@ This reduces what the program can reach, but it is not a complete isolation boun
 This sets up Claude Code as the program. You need [Nix](https://nixos.org/download) with flakes, and a Claude login: run `claude` once outside confine and log in.
 
 ```sh
-mkdir -p ~/.confine/envs/dev && cd ~/.confine/envs/dev
-nix flake init -t github:tbsklg/confine.nix
-nix profile add .
+nix profile install github:tbsklg/confine.nix
+confine init
 ```
 
 Then, in a project:

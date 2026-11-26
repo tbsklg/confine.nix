@@ -7,7 +7,7 @@ let
     version = builtins.head (builtins.match ".*\n[[:space:]]*\.version = \"([^\"]+)\".*" (builtins.readFile ../build.zig.zon));
     src = pkgs.lib.fileset.toSource {
       root = ../.;
-      fileset = pkgs.lib.fileset.unions [ ../build.zig ../build.zig.zon ../src ];
+      fileset = pkgs.lib.fileset.unions [ ../build.zig ../build.zig.zon ../src ../templates ];
     };
     nativeBuildInputs = [ zig.hook pkgs.removeReferencesTo ];
     zigBuildFlags = [ "--sysroot" pkgs.apple-sdk.sdkroot ];

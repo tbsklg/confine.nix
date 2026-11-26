@@ -13,7 +13,7 @@ Reference: [confine.toml](confine.toml.md), [confine](confine.md), [confine-clie
 
 ```
 ~/.confine/envs/<name>/confine.toml
-   │ nix profile add
+   │ confine init
    ▼
 confine-<name> ── starts gateway and broker, then the command
    │
@@ -37,14 +37,14 @@ sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install)
 mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf
 ```
 
-Create the env in `~/.confine/envs/<name>/` and install it:
+Install confine, then create the env:
 
 ```sh
-mkdir -p ~/.confine/envs/dev && cd ~/.confine/envs/dev
-nix flake init -t github:tbsklg/confine.nix
-nix build .#schema -o confine.schema.json
-nix profile add .                  # older Nix: nix profile install
+nix profile install github:tbsklg/confine.nix
+confine init
 ```
+
+`confine init [name]` creates `~/.confine/envs/<name>/` (default `dev`) from the template, builds its schema and installs `confine-<name>`. It refuses an env that exists, and if a step fails it removes what it created.
 
 You edit `confine.toml`; `flake.nix` stays as it is. The sandbox can't read or write anything in `~/.confine`, so the program can't see or change its own config. The schema gives completion and checks in editors that read the `#:schema` line. If you keep the directory in git, `git add` new files: a flake in git only sees tracked files.
 
@@ -145,10 +145,8 @@ nix flake update && nix build .#schema -o confine.schema.json && nix profile upg
 If a project needs its own toolchain, give it its own env with the tools in `packages`:
 
 ```sh
-mkdir -p ~/.confine/envs/your-project && cd ~/.confine/envs/your-project
-nix flake init -t github:tbsklg/confine.nix
-# set name = "your-project" and packages in confine.toml
-nix profile add .
+confine init your-project
+# set packages in ~/.confine/envs/your-project/confine.toml, then nix profile upgrade --all
 cd ~/code/your-project && confine-your-project claude
 ```
 

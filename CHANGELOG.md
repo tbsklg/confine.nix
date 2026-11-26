@@ -2,6 +2,14 @@
 
 Newest first. What you have to do after an update is in [upgrade notes](docs/upgrade.md).
 
+## Unreleased
+
+### 2026-11-26: an installer
+
+- Setting up an env took four commands of Nix plumbing. `confine init [name]` creates `~/.confine/envs/<name>`, builds its schema and installs `confine-<name>`; the name defaults to `dev`.
+- Nix is required, not installed: it is the package manager, as `pkg_add` is on OpenBSD, and its installer changes the system. confine ships the template in its binary, so it writes the env it was built with.
+- It never overwrites an env, and removes what it created when a step fails, so it can always be run again.
+
 ## 0.1.0, 2026-11-23
 
 ### 2026-11-17: a proxy to see the network
