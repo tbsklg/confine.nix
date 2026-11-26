@@ -1,6 +1,5 @@
 #:schema ./confine.schema.json
 
 name = "dev"
-preset = "claude"
-
-[gateway.anthropicOauth]
+preset = "shell"
+packages = []

@@ -9,7 +9,7 @@ Setting up an env took four commands of Nix plumbing. Installers commonly bundle
 
 ## Decision
 
-Nix is required, as `pkg_add` is on OpenBSD; confine is installed with `nix profile install github:tbsklg/confine.nix`. `confine init [name]` creates `~/.confine/envs/<name>`, builds its schema and installs `confine-<name>`; the name defaults to `dev`. The template is embedded in the binary. `init` never overwrites an env, and removes what it created when a step fails.
+Nix is required, as `pkg_add` is on OpenBSD; confine is installed with `nix profile add github:tbsklg/confine.nix`. `confine init [name]` creates `~/.confine/envs/<name>`, builds its schema and installs `confine-<name>`; the name defaults to `dev`. The template is embedded in the binary. `init` never overwrites an env, and removes what it created when a step fails.
 
 ## Consequences
 

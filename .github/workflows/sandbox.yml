@@ -13,6 +13,9 @@ jobs:
 
       - uses: cachix/install-nix-action@v31
 
+      - name: Test
+        run: nix flake check
+
       - name: Plant canaries
         run: |
           mkdir -p ~/.aws ~/.ssh ~/.config/glab-cli

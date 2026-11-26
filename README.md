@@ -1,5 +1,7 @@
 # confine.nix
 
+[![tests](https://github.com/tbsklg/confine.nix/actions/workflows/sandbox.yml/badge.svg)](https://github.com/tbsklg/confine.nix/actions/workflows/sandbox.yml) [![version](https://img.shields.io/github/v/tag/tbsklg/confine.nix?sort=semver&label=version)](https://tbsklg.github.io/confine.nix/release-notes/)
+
 A sandbox for any command-line program on macOS: a coding agent, a test runner, an install script you don't trust.
 
 You write a `confine.toml`: which program runs, which tools it may use and which API it may reach. confine starts the program under a Seatbelt profile that denies everything else. Your credentials stay outside the sandbox: a gateway adds an API's key, and a broker runs your tools with their own logins.
@@ -10,31 +12,32 @@ This reduces what the program can reach, but it is not a complete isolation boun
 
 ## Quickstart
 
-This sets up Claude Code as the program. You need [Nix](https://nixos.org/download) with flakes, and a Claude login: run `claude` once outside confine and log in.
+You need [Nix](https://nixos.org/download) with flakes.
 
 ```sh
-nix profile install github:tbsklg/confine.nix
+nix profile add github:tbsklg/confine.nix    # older Nix: nix profile install
 confine init
 ```
 
 Then, in a project:
 
 ```sh
-confine-dev claude
+confine-dev
 ```
 
-The env is configured in `~/.confine/envs/dev/confine.toml`, where the sandbox can't read or change it:
+This opens a shell in the sandbox, with bash and coreutils. It can read and write the project, except dot paths, and can't read the rest of your home. Give it what your program needs in `~/.confine/envs/dev/confine.toml`, where the sandbox can't read or change it:
 
 ```toml
 #:schema ./confine.schema.json
 
 name = "dev"
-preset = "claude"
-
-[gateway.anthropicOauth]
+preset = "shell"
+packages = ["gnumake"]
 ```
 
-After editing it, run `nix profile upgrade --all`. Until then, `confine-dev` keeps using the sandbox you installed.
+After editing it, run `nix profile upgrade --all`. Until then, `confine-dev` keeps using the sandbox you installed. Then run the program: `confine-dev make test`.
+
+For a coding agent, use its preset and a gateway for its API; see [Reach an API](docs/README.md#reach-an-api) and the [examples](docs/confine.toml.md#examples).
 
 ## Documentation
 

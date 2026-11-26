@@ -1,5 +1,9 @@
 # Using confine
 
+[![tests](https://github.com/tbsklg/confine.nix/actions/workflows/sandbox.yml/badge.svg)](https://github.com/tbsklg/confine.nix/actions/workflows/sandbox.yml) [![version](https://img.shields.io/github/v/tag/tbsklg/confine.nix?sort=semver&label=version)](https://tbsklg.github.io/confine.nix/release-notes/)
+
+What's new: [release notes](release-notes/README.md)
+
 - [Set up an env](#set-up-an-env)
 - [Reach an API](#reach-an-api)
 - [Give the program a tool](#give-the-program-a-tool)
@@ -9,7 +13,7 @@
 - [Security limits](#security-limits)
 - [Troubleshooting](#troubleshooting)
 
-Reference: [confine.toml](confine.toml.md), [confine](confine.md), [confine-client](confine-client.md), [debug log](logging.md), [release notes](release-notes/README.md), [confine in Nix](nix.md)
+Reference: [confine.toml](confine.toml.md), [confine](confine.md), [confine-client](confine-client.md), [debug log](logging.md), [confine in Nix](nix.md)
 
 ```
 ~/.confine/envs/<name>/confine.toml
@@ -40,7 +44,7 @@ mkdir -p ~/.config/nix && echo "experimental-features = nix-command flakes" >> ~
 Install confine, then create the env:
 
 ```sh
-nix profile install github:tbsklg/confine.nix
+nix profile add github:tbsklg/confine.nix    # older Nix: nix profile install
 confine init
 ```
 
@@ -52,10 +56,10 @@ Run it from a project:
 
 ```sh
 cd your-project
-confine-dev claude
+confine-dev make test
 ```
 
-Without a command, `confine-dev` opens a shell in the sandbox. The template sets up Claude Code. For any other command, use the `shell` preset with what the command needs in `packages`, and run e.g. `confine-shell make test`. See [confine.toml](confine.toml.md#examples).
+Without a command, `confine-dev` opens a shell in the sandbox. The template uses the `shell` preset: bash and coreutils, and what you add to `packages`. For a coding agent, use its preset, e.g. `claude` or `opencode`, and a gateway for its API. See [confine.toml](confine.toml.md#examples).
 
 ## Reach an API
 
@@ -147,7 +151,7 @@ If a project needs its own toolchain, give it its own env with the tools in `pac
 ```sh
 confine init your-project
 # set packages in ~/.confine/envs/your-project/confine.toml, then nix profile upgrade --all
-cd ~/code/your-project && confine-your-project claude
+cd ~/code/your-project && confine-your-project make test
 ```
 
 ## Security limits

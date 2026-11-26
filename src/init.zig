@@ -22,14 +22,15 @@ pub fn run(arena: std.mem.Allocator, io: std.Io, environ: *std.process.Environ.M
 
     write(arena, io, dir, name) catch |err| return undo(io, path, err);
     nix(io, dir, &.{ "nix", "build", ".#schema", "-o", "confine.schema.json" }) catch |err| return undo(io, path, err);
-    nix(io, dir, &.{ "nix", "profile", "install", "." }) catch |err| return undo(io, path, err);
+    nix(io, dir, &.{ "nix", "profile", profileAdd(io), "." }) catch |err| return undo(io, path, err);
 
     std.debug.print(
         \\confine: installed confine-{s}
         \\
-        \\  cd your-project && confine-{s} claude
+        \\  cd your-project && confine-{s}
         \\
-        \\Its config is {s}/confine.toml; after editing it, run `nix profile upgrade --all`.
+        \\opens a shell in the sandbox. Add what your program needs to packages in
+        \\{s}/confine.toml, then run `nix profile upgrade --all`.
         \\
     , .{ name, name, shown });
 }
@@ -46,6 +47,13 @@ fn nix(io: std.Io, dir: std.Io.Dir, argv: []const []const u8) !void {
     };
     const term = try child.wait(io);
     if (term != .exited or term.exited != 0) return error.NixFailed;
+}
+
+/// Nix renamed `profile install` to `profile add`; the old name warns on new Nix and the new one fails on old Nix.
+fn profileAdd(io: std.Io) []const u8 {
+    var child = std.process.spawn(io, .{ .argv = &.{ "nix", "profile", "add", "--help" }, .stdin = .ignore, .stdout = .ignore, .stderr = .ignore }) catch return "install";
+    const term = child.wait(io) catch return "install";
+    return if (term == .exited and term.exited == 0) "add" else "install";
 }
 
 fn undo(io: std.Io, path: []const u8, err: anyerror) !void {

@@ -19,7 +19,7 @@ More in [Development](docs/development.md).
 ## A change ships with its docs, in the same commit
 
 - The reference page of what it changes, in `docs/`.
-- An entry in the next version's [release notes](docs/release-notes/README.md), under its area: New Features, Resolved Issues, Known Issues or Deprecations. Present tense, one or two sentences. What users must change goes under Deprecations, with the commands.
+- An entry in the next version's [release notes](docs/release-notes/README.md) if a user would notice it: one line, under New Features, Resolved Issues, Known Issues or Deprecations.
 - An [ADR](docs/adr/template.md) if the change is a decision: Context, Decision, Consequences, with rejected options under Consequences. Number it next, add it to the index, never rewrite an accepted one.
 
 There is no changelog: what changed is in the release notes, why is in the ADRs.
