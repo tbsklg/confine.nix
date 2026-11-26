@@ -49,18 +49,6 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(client_exe);
 
-    // A standalone forward proxy, driven by tester/run.sh.
-    const proxy_exe = b.addExecutable(.{
-        .name = "confine-proxy",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/proxy/main.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    const proxy_step = b.step("proxy", "Build confine-proxy");
-    proxy_step.dependOn(&b.addInstallArtifact(proxy_exe, .{}).step);
-
     // This creates a top level step. Top level steps have a name and can be
     // invoked by name when running `zig build` (e.g. `zig build run`).
     // This will evaluate the `run` step rather than the default step.
@@ -124,7 +112,6 @@ pub fn build(b: *std.Build) void {
     addOsLog(b, exe_check.root_module);
     const check = b.step("check", "Check if confine compiles");
     check.dependOn(&exe_check.step);
-    check.dependOn(&proxy_exe.step);
 }
 
 fn addOsLog(b: *std.Build, module: *std.Build.Module) void {

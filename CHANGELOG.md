@@ -8,7 +8,6 @@ Newest first. What you have to do after an update is in [upgrade notes](docs/upg
 
 - Nobody saw where the program connected. confine now runs a forward proxy outside the sandbox, set in `HTTPS_PROXY`, and logs each tunnel's host, port, bytes and duration under the `proxy` category.
 - It only logs: no allow or block list, and the preset's network rules are unchanged. It relays `CONNECT` tunnels without decrypting them.
-- Built test-first in stages against a black-box tester in `tester/`, before it was wired into the launcher.
 
 ### 2026-11-11: from a launcher to a sandbox
 
