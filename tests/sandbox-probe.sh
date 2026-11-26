@@ -66,7 +66,9 @@ known_gap "list /private/var/folders" can_list /private/var/folders
 known_gap "write /private/tmp" can_write /private/tmp/confine-probe
 
 echo "--- network"
+proxy=${HTTPS_PROXY#http://}
 expect denied "connect to port 80" can_connect 1.1.1.1 80
 known_gap "connect to any host on port 443" can_connect 1.1.1.1 443
+expect allowed "connect to the proxy" can_connect "${proxy%:*}" "${proxy##*:}"
 
 exit $failed

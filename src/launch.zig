@@ -5,6 +5,7 @@ const broker = @import("broker/server.zig");
 const rpc = @import("broker/rpc.zig");
 const registry = @import("broker/registry.zig");
 const gateway = @import("gateway.zig");
+const proxy = @import("proxy/server.zig");
 const secret = @import("secret.zig");
 
 const Env = @import("env/env.zig");
@@ -43,13 +44,17 @@ pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []cons
     var running = try startGateway(arena, io, manifest.gateway, environ, env.home, dir_path);
     defer if (running) |*r| r.stop(io);
 
+    var proxy_server = try proxy.listen(io, 0);
+    const proxy_port = proxy_server.socket.address.getPort();
+    log.info("proxy listening on 127.0.0.1:{d}", .{proxy_port});
+
     var sock_buf: [std.fs.max_name_bytes]u8 = undefined;
     const sock_path = try std.fmt.bufPrintZ(&sock_buf, "{s}/broker.sock", .{dir_path});
     var server = try broker.listen(io, sock_path);
     const ticket = broker.newTicket(io);
 
-    const profile_z = try finalProfile(arena, profile, running, tag);
-    const envp = try sandboxEnviron(arena, environ, preset, sandbox_env.bin, manifest.shell, sock_path, &ticket, running);
+    const profile_z = try finalProfile(arena, profile, proxy_port, running, tag);
+    const envp = try sandboxEnviron(arena, environ, preset, sandbox_env.bin, manifest.shell, sock_path, &ticket, proxy_port, running);
     const parameters = profileParameters(env, sock_path);
 
     const ctx: rpc.Context = .{ .ticket = &ticket, .registry = .{ .capabilities = try registry.parseAdapters(arena, manifest.adapters, adapter_pipes, dir_path) }, .environ = environ };
@@ -58,6 +63,9 @@ pub fn launch(init: std.process.Init, sandbox_env: SandboxEnv, user_args: []cons
 
     const thread = try std.Thread.spawn(.{}, broker.serveLoop, .{ io, init.gpa, &server, &ctx });
     thread.detach();
+
+    const proxy_thread = try std.Thread.spawn(.{}, serveProxy, .{ io, &proxy_server });
+    proxy_thread.detach();
 
     const status = waitAgent(pid) catch |err| {
         log.err("waiting for agent failed: {t}", .{err});
@@ -134,13 +142,20 @@ fn writeSecretNames(sources: secret.Sources, w: *std.Io.Writer) std.Io.Writer.Er
     }
 }
 
-fn finalProfile(arena: std.mem.Allocator, profile: sbpl.Profile, running: ?gateway.Running, tag: []const u8) ![:0]u8 {
+fn serveProxy(io: std.Io, server: *std.Io.net.Server) void {
+    proxy.serve(io, server) catch |err| log.err("proxy stopped: {t}", .{err});
+}
+
+fn finalProfile(arena: std.mem.Allocator, profile: sbpl.Profile, proxy_port: u16, running: ?gateway.Running, tag: []const u8) ![:0]u8 {
+    const proxy_rules = try arena.dupe(sbpl.Rule, &.{
+        sbpl.Rule.allow(.network_outbound, .{ .remote_tcp = try std.fmt.allocPrint(arena, "localhost:{d}", .{proxy_port}) }),
+    });
     const gateway_rules: []const sbpl.Rule = if (running) |r| try arena.dupe(sbpl.Rule, &.{
         sbpl.Rule.allow(.network_outbound, .{ .remote_tcp = try std.fmt.allocPrint(arena, "localhost:{d}", .{r.port}) }),
     }) else &.{};
 
     const final: sbpl.Profile = .{
-        .rules = try std.mem.concat(arena, sbpl.Rule, &.{ profile.rules, gateway_rules }),
+        .rules = try std.mem.concat(arena, sbpl.Rule, &.{ profile.rules, proxy_rules, gateway_rules }),
         .message = tag,
     };
 
@@ -148,6 +163,20 @@ fn finalProfile(arena: std.mem.Allocator, profile: sbpl.Profile, running: ?gatew
     try final.write(&aw.writer);
 
     return arena.dupeZ(u8, aw.written());
+}
+
+test "finalProfile lets the program reach the proxy and the gateway, and keeps the preset's network rules" {
+    var arena_state = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena_state.deinit();
+
+    const preset: sbpl.Profile = .{ .rules = &.{sbpl.Rule.allow(.network_outbound, .{ .remote_tcp = "*:443" })} };
+    const running: gateway.Running = .{ .name = "anthropic", .port = 4712, .url = "http://127.0.0.1:4712", .child = undefined };
+    const written = try finalProfile(arena_state.allocator(), preset, 4711, running, "confine-1");
+
+    try std.testing.expect(std.mem.indexOf(u8, written, "(allow network-outbound (remote tcp \"*:443\"))") != null);
+    try std.testing.expect(std.mem.indexOf(u8, written, "(allow network-outbound (remote tcp \"localhost:4711\"))") != null);
+    try std.testing.expect(std.mem.indexOf(u8, written, "(allow network-outbound (remote tcp \"localhost:4712\"))") != null);
+    try std.testing.expect(std.mem.indexOf(u8, written, "(deny network-outbound") == null);
 }
 
 const Command = struct {
@@ -197,7 +226,7 @@ test "resolveCommand refuses a path or an empty name" {
     try std.testing.expectError(error.CommandNotInEnv, resolveCommand(arena_state.allocator(), "/env/sandbox/bin", "/bin/sh", &.{""}));
 }
 
-fn sandboxEnviron(arena: std.mem.Allocator, environ: *const std.process.Environ.Map, preset: Preset, bin_dir: []const u8, shell: []const u8, sock_path: []const u8, ticket: []const u8, running: ?gateway.Running) !Argv {
+fn sandboxEnviron(arena: std.mem.Allocator, environ: *const std.process.Environ.Map, preset: Preset, bin_dir: []const u8, shell: []const u8, sock_path: []const u8, ticket: []const u8, proxy_port: u16, running: ?gateway.Running) !Argv {
     var map = std.process.Environ.Map.init(arena);
     for (preset.env) |name| {
         if (environ.get(name)) |value| try map.put(name, value);
@@ -207,6 +236,10 @@ fn sandboxEnviron(arena: std.mem.Allocator, environ: *const std.process.Environ.
     try map.put("SHELL", shell);
     try map.put("BROKER_SOCK", sock_path);
     try map.put("BROKER_TICKET", ticket);
+    const proxy_url = try std.fmt.allocPrint(arena, "http://127.0.0.1:{d}", .{proxy_port});
+    for ([_][]const u8{ "HTTPS_PROXY", "https_proxy" }) |name| try map.put(name, proxy_url);
+    // The gateway is reached directly, not through the proxy.
+    for ([_][]const u8{ "NO_PROXY", "no_proxy" }) |name| try map.put(name, "127.0.0.1,localhost");
     if (running) |r| for (try gateway.environFor(arena, preset.gatewayEnv, r)) |entry| try map.put(entry.name, entry.value);
     return (try map.createPosixBlock(arena, .{})).slice;
 }

@@ -43,6 +43,7 @@ After editing it, run `nix profile upgrade --all`. Until then, `confine-dev` kee
 - Reference: [confine.toml](docs/confine.toml.md), [confine](docs/confine.md), [confine-client](docs/confine-client.md), [debug log](docs/logging.md)
 - [Upgrade notes](docs/upgrade.md): what to change after an update
 - [confine in Nix](docs/nix.md): your own presets, gateways and catalogs
+- [Design](docs/design.md): why the sandbox is built outside the project
 - [Changelog](CHANGELOG.md): what changed, and why
 - [Development](docs/development.md)
 

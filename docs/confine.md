@@ -12,7 +12,7 @@ confine-<name> --confine-secret <service>
 
 ## Description
 
-`confine-<name>` is the launcher of an installed env. It starts the env's gateway and broker outside the sandbox, then runs `command` with `args` in the current directory under a Seatbelt profile. `command` is a program of the env. Without it, confine runs an interactive shell; nothing starts on its own.
+`confine-<name>` is the launcher of an installed env. It starts the env's gateway, broker and proxy outside the sandbox, then runs `command` with `args` in the current directory under a Seatbelt profile. `command` is a program of the env. Without it, confine runs an interactive shell; nothing starts on its own.
 
 Inside the sandbox, the program:
 
@@ -21,11 +21,19 @@ Inside the sandbox, the program:
 - can't read `~/.confine` or the keychains
 - runs only programs from the env
 - reaches an API through the gateway and your tools through the broker, with [confine-client](confine-client.md)
+- connects through confine's proxy, which logs every host and port it requests
 
 Everything no rule allows is denied.
 
 - `--confine-config`: Print the env's config, the methods the program sees, and the Seatbelt profile. Starts nothing.
 - `--confine-secret <service>`: Ask for a secret without echo and store it as `<service>` in confine's keychain.
+
+## Environment
+
+Set in the sandbox:
+
+- `HTTPS_PROXY`, `https_proxy`: `http://127.0.0.1:<port>`, confine's proxy. It relays `CONNECT` tunnels, the way HTTPS goes through a proxy, and logs each one. It blocks nothing.
+- `NO_PROXY`, `no_proxy`: `127.0.0.1,localhost`, so the gateway is reached directly.
 
 ## Files
 
@@ -56,5 +64,7 @@ confine-dev --confine-secret anthropic-api-key
 On macOS, any process can read the environment and arguments of every other process of the same user. Don't export secrets in the shell that starts confine; use `--confine-secret`.
 
 The env is only as safe as the `confine.toml` it was built from. In `~/.confine/envs/<name>/` the program can't reach it; elsewhere, keep it where the program can't write.
+
+A program that ignores `HTTPS_PROXY` connects directly, as far as the preset allows, and doesn't show up in the proxy log. Most HTTP clients read it; some, like Node's built-in `fetch`, need a flag or an agent.
 
 The socket path `~/.confine/run/<pid>/broker.sock` must fit in 104 bytes; with a very long `$HOME`, confine fails with `NameTooLong`.

@@ -17,4 +17,5 @@ test {
     _ = @import("env/manifest.zig");
     _ = @import("env/sandbox_env.zig");
     _ = @import("log.zig");
+    _ = @import("proxy/server.zig");
 }

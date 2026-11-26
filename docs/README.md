@@ -21,6 +21,7 @@ confine-<name> ── starts gateway and broker, then the command
 ┌─ Seatbelt sandbox ───────────┐       outside, with your credentials
 │                              │
 │  program                     │── HTTP, no key ──▶ gateway ── adds key ──▶ API
+│                              │── CONNECT ───────▶ proxy ──── logs ──────▶ internet
 │  confine-client              │── JSON-RPC ──────▶ broker ─── runs ──────▶ glab, aws
 │  project directory           │
 │                              │
@@ -158,6 +159,7 @@ cd ~/code/your-project && confine-your-project claude
 - **Open adapters can print their credential:** `glab config get token`, `aws configure export-credentials`. Narrow adapters can't.
 - **Tools keep credentials in your home:** glab in `~/.config/glab-cli`, aws in `~/.aws`. The sandbox can't read them; an `allowRead` for `~` or `~/.config` would hand them to the program.
 - **Tools run in the project directory.** The program can write there, and a tool outside the sandbox may read config from it: e.g. a planted git repo with `core.fsmonitor` runs a command as you when an adapter calls `git`.
+- **The proxy logs, it doesn't restrict.** It logs the host and port of every tunnel and the bytes each way; HTTPS stays encrypted end to end. A program that ignores `HTTPS_PROXY` connects directly, as far as the preset allows, and isn't logged.
 - **The program shares your terminal.** confine doesn't start it in a separate session, so a preset that allows `file-ioctl` may let it type into your shell.
 
 ## Troubleshooting
@@ -169,4 +171,6 @@ cd ~/code/your-project && confine-your-project claude
 | git: `unable to access '~/.config/git/config'` | The config is a symlink, e.g. from home-manager. Add its target to `allowRead` |
 | `NameTooLong` at start | `$HOME` is too long: `~/.confine/run/<pid>/broker.sock` must fit in 104 bytes |
 | Info lines on stderr at start | The gateway starting, e.g. `aws-sigv4-proxy`. Harmless |
+| A tool's connections are missing from the proxy log | It ignores `HTTPS_PROXY`; see its docs for a proxy setting |
+| A tool fails only through the proxy | Run it with `env -u HTTPS_PROXY -u https_proxy <tool>`; it then connects directly, as far as the preset allows, and isn't logged |
 | A problem with one program | See its preset's README in [confine-ports](https://github.com/tbsklg/confine-ports) |
