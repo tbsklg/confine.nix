@@ -5,9 +5,6 @@ const fail = init.fail;
 
 pub const release_notes = "https://tbsklg.github.io/confine.nix/release-notes/";
 
-/// Pulls newer confine and ports into `~/.confine/envs/<name>`, upgrades only that env's profile entry
-/// and rebuilds its schema. Refuses while `confine.toml` has changes that aren't applied, since Nix would
-/// apply them too; restores the old `flake.lock` if a step fails.
 pub fn run(arena: std.mem.Allocator, io: std.Io, environ: *std.process.Environ.Map, name: []const u8) !void {
     var dir = try openEnv(arena, io, environ, name);
     defer dir.close(io);
@@ -35,7 +32,6 @@ pub fn run(arena: std.mem.Allocator, io: std.Io, environ: *std.process.Environ.M
     std.debug.print("Release notes: {s}\n", .{release_notes});
 }
 
-/// Builds `~/.confine/envs/<name>` from its `confine.toml` with the versions it already has, and installs it.
 pub fn apply(arena: std.mem.Allocator, io: std.Io, environ: *std.process.Environ.Map, name: []const u8) !void {
     var dir = try openEnv(arena, io, environ, name);
     defer dir.close(io);
@@ -62,12 +58,10 @@ fn openEnv(arena: std.mem.Allocator, io: std.Io, environ: *std.process.Environ.M
     };
 }
 
-/// The store path of the env's entry in the Nix profile, or null if it isn't installed.
 fn installedPath(arena: std.mem.Allocator, io: std.Io, name: []const u8) !?[]const u8 {
     return parseInstalled(arena, try output(arena, io, null, &.{ "nix", "profile", "list", "--json" }), name);
 }
 
-/// The store path `confine.toml` builds to now, from evaluation alone.
 fn configuredPath(arena: std.mem.Allocator, io: std.Io, dir: std.Io.Dir) ![]const u8 {
     return std.mem.trim(u8, try output(arena, io, dir, &.{ "nix", "eval", "--raw", ".#default.outPath" }), "\n");
 }
@@ -109,7 +103,6 @@ fn report(name: []const u8, err: anyerror) noreturn {
 
 const Change = struct { input: []const u8, old: []const u8, new: []const u8 };
 
-/// The env's direct inputs whose locked revision moved, with short revisions.
 fn changes(arena: std.mem.Allocator, old_lock: []const u8, new_lock: []const u8) ![]const Change {
     const old = try std.json.parseFromSliceLeaky(std.json.Value, arena, old_lock, .{});
     const new = try std.json.parseFromSliceLeaky(std.json.Value, arena, new_lock, .{});
