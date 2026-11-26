@@ -9,7 +9,7 @@
 - [Security limits](#security-limits)
 - [Troubleshooting](#troubleshooting)
 
-Reference: [confine.toml](confine.toml.md), [confine](confine.md), [confine-client](confine-client.md), [debug log](logging.md), [upgrade notes](upgrade.md), [confine in Nix](nix.md)
+Reference: [confine.toml](confine.toml.md), [confine](confine.md), [confine-client](confine-client.md), [debug log](logging.md), [release notes](release-notes/README.md), [confine in Nix](nix.md)
 
 ```
 ~/.confine/envs/<name>/confine.toml
@@ -132,7 +132,7 @@ After editing `confine.toml`, upgrade. Until then, the installed env runs unchan
 cd ~/.confine/envs/dev && nix profile upgrade --all
 ```
 
-To pull the latest confine and ports, then check the [upgrade notes](upgrade.md):
+To pull the latest confine and ports, then check the [release notes](release-notes/README.md):
 
 ```sh
 nix flake update && nix build .#schema -o confine.schema.json && nix profile upgrade --all
